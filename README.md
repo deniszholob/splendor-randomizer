@@ -17,3 +17,8 @@ If you find the cheat sheet or the source code useful, consider:
 # Screenshots
 
 ![Splendor Randomizer](./global/assets/screenshots/screenshot-1.png)
+
+# Credits:
+
+Images from https://boardgamegeek.com/
+Splendor board game: https://boardgamegeek.com/boardgame/148228/splendor

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Denis Zholob" />
+    <meta
+      name="keywords"
+      content="Splendor, noble cards, nobles, randomizer, board game, Denis Zholob"
+    />
+    <meta name="title" content="Splendor Noble Grid" />
+    <meta
+      name="description"
+      content="Visual grid of all Splendor noble cards, with double nobles on the left, triplets on the right, and color tokens down the center."
+    />
+    <meta name="theme-color" content="#020617" />
+    <meta property="og:title" content="Splendor Noble Grid" />
+    <meta
+      property="og:description"
+      content="Browse all Splendor noble cards in a responsive grid layout."
+    />
+    <meta property="og:type" content="website" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://cf.geekdo-images.com/Bj4r4BVqJSqKyQE-9GPHow__opengraph/img/C-OSQfnshSEPik0jLDG6v2ELN6g=/0x181:546x467/fit-in/1200x630/filters:strip_icc()/pic9273562.png
+"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Splendor Noble Grid</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-display: "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+
+      @layer base {
+        html {
+          @apply bg-slate-950;
+        }
+
+        body {
+          @apply min-h-dvh bg-slate-950 font-[var(--font-display)] text-white antialiased;
+          background-image:
+            radial-gradient(circle at top, rgba(251, 191, 36, 0.18), transparent 28%),
+            linear-gradient(180deg, #0f172a 0%, #111827 48%, #020617 100%);
+        }
+      }
+
+      @layer components {
+        .card-frame {
+          @apply relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)];
+          width: 100%;
+          height: 100%;
+          aspect-ratio: 3 / 4;
+        }
+
+        .card-scrim {
+          @apply pointer-events-none absolute inset-0 z-10;
+          background:
+            linear-gradient(180deg, rgba(2, 6, 23, 0.04) 0%, rgba(2, 6, 23, 0.14) 48%, rgba(2, 6, 23, 0.78) 100%);
+        }
+
+        .color-chip {
+          @apply rounded-full border border-white/15 px-2 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.12em] text-white shadow-md sm:text-[0.68rem];
+        }
+
+        .color-chip-white {
+          background: rgba(226, 232, 240, 0.28);
+        }
+
+        .color-chip-red {
+          background: rgba(220, 38, 38, 0.35);
+        }
+
+        .color-chip-green {
+          background: rgba(22, 163, 74, 0.35);
+        }
+
+        .color-chip-blue {
+          background: rgba(37, 99, 235, 0.35);
+        }
+
+        .color-chip-black {
+          background: rgba(15, 23, 42, 0.88);
+        }
+
+        .card-frame.is-missing .noble-fallback {
+          @apply flex;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
