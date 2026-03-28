@@ -57,7 +57,9 @@
     "*.interceptor.ts": "angular-guard",
     "*.events.ts": "tcl",
     "*.data.ts": "database",
+    "*.data.js": "database",
     "*.const.ts": "database",
+    "*.const.js": "database",
     "index.ts": "url",
     "public-api.ts": "url",
     "models.ts": "url",
@@ -66,19 +68,19 @@
   "material-icon-theme.files.customClones": [
     {
       "name": "typescript-model",
-      "fileExtensions": ["model.ts"],
+      "fileExtensions": ["model.ts", "model.js"],
       "base": "typescript",
       "color": "red-400"
     },
     {
       "name": "typescript-enum",
-      "fileExtensions": ["enum.ts"],
+      "fileExtensions": ["enum.ts", "enum.js"],
       "base": "typescript",
       "color": "teal-400"
     },
     {
       "name": "typescript-util",
-      "fileExtensions": ["util.ts"],
+      "fileExtensions": ["util.ts", "util.js"],
       "base": "typescript",
       "color": "light-green-600"
     },

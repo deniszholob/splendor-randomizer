@@ -1,14 +1,43 @@
 :root {
   color-scheme: dark;
-  --panel: rgba(15, 23, 42, 0.82);
-  --panel-strong: rgba(15, 23, 42, 0.95);
-  --border: rgba(255, 255, 255, 0.12);
-  --text-soft: rgba(255, 255, 255, 0.72);
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+  --font-display: "Trebuchet MS", "Segoe UI", sans-serif;
+  --color-page: #020617;
+  --color-surface: rgba(15, 23, 42, 0.72);
+  --color-surface-strong: rgba(15, 23, 42, 0.88);
+  --color-border-soft: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+  --color-text-primary: #ffffff;
+  --color-text-muted: #cbd5e1;
+  --color-text-soft: #94a3b8;
+  --color-accent: #fcd34d;
+  --color-accent-strong: #fbbf24;
+  --focus-ring: rgba(252, 211, 77, 0.95);
+  --shadow-card: 0 14px 32px rgba(0, 0, 0, 0.28);
+  --overlay-scrim:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.04) 0%, rgba(2, 6, 23, 0.14) 48%, rgba(2, 6, 23, 0.78) 100%);
+  --fallback-surface:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 16px,
+      rgba(255, 255, 255, 0.02) 16px 32px
+    );
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  background: var(--color-page);
+}
+
+body {
+  font-family: var(--font-display);
+  color: var(--color-text-primary);
+  background-image:
+    radial-gradient(circle at top, rgba(251, 191, 36, 0.18), transparent 28%),
+    linear-gradient(180deg, #0f172a 0%, #111827 48%, #020617 100%);
 }
 
 .result-board {
@@ -17,16 +46,16 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.result-board-cities {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .noble-board {
   display: grid;
   gap: 0.5rem;
   width: min(100%, 820px);
   margin-inline: auto;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.result-board-cities {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .city-board {
@@ -43,27 +72,8 @@
   aspect-ratio: 400 / 170;
 }
 
-.noble-fallback {
-  gap: 10px;
-  padding: 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.06) 0 16px,
-      rgba(255, 255, 255, 0.02) 16px 32px
-    );
-}
-
-.noble-fallback strong {
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.noble-fallback span {
-  color: var(--text-soft);
-  font-size: 0.78rem;
-  word-break: break-word;
+.card-frame.is-missing .noble-fallback {
+  display: flex;
 }
 
 .card-frame.is-claimed img {
@@ -75,7 +85,7 @@
 }
 
 .card-frame[role="button"]:focus-visible {
-  outline: 2px solid rgba(252, 211, 77, 0.95);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -87,34 +97,35 @@
   opacity: 0.14;
 }
 
-.claim-pill {
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.card-scrim {
+  background: var(--overlay-scrim);
+}
+
+.noble-fallback {
+  display: none;
+  gap: 10px;
+  padding: 18px;
+  background: var(--fallback-surface);
+}
+
+.color-chip-white {
+  background: rgba(226, 232, 240, 0.28);
+}
+
+.color-chip-red {
+  background: rgba(220, 38, 38, 0.35);
+}
+
+.color-chip-green {
+  background: rgba(22, 163, 74, 0.35);
+}
+
+.color-chip-blue {
+  background: rgba(37, 99, 235, 0.35);
+}
+
+.color-chip-black {
   background: rgba(15, 23, 42, 0.88);
-  color: white;
-  border-radius: 999px;
-  padding: 0.38rem 0.72rem;
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(10px);
-  width: 100%;
-  min-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.claim-pill.is-active {
-  background: rgba(251, 191, 36, 0.96);
-  border-color: rgba(253, 224, 71, 0.95);
-  color: rgb(15, 23, 42);
-}
-
-.claim-pill-clear {
-  background: rgba(2, 6, 23, 0.72);
 }
 
 .claim-picker {
@@ -142,26 +153,10 @@
     width: 100%;
   }
 
-  .noble-board .badge-pill {
+  .noble-board .badge-pill,
+  .noble-board .claim-badge,
+  .noble-board .color-chip-stack {
     display: none;
-  }
-
-  .noble-board > .card-frame > .absolute.right-2.top-2.z-20,
-  .noble-board > .card-frame > .absolute.left-2.top-2.z-20 {
-    display: none;
-  }
-
-  .claim-pill {
-    padding: 0.34rem 0.58rem;
-    font-size: 0.62rem;
-    letter-spacing: 0.06em;
-  }
-
-  .claim-badge {
-    top: 0.45rem;
-    left: 0.45rem;
-    bottom: auto;
-    max-width: calc(100% - 0.9rem);
   }
 
   .city-board {

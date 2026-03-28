@@ -25,94 +25,227 @@
     />
     <meta property="og:type" content="website" />
 
-    <link
-      rel="icon"
-      type="image/webp"
-      href="./assets/tokens/yellow.webp"
-    />
+    <link rel="icon" type="image/webp" href="./assets/tokens/yellow.webp" />
     <link rel="apple-touch-icon" href="./assets/tokens/yellow.webp" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
     <title>Splendor Randomizer</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style type="text/tailwindcss">
-      @theme {
-        --font-display: "Trebuchet MS", "Segoe UI", sans-serif;
-      }
-
-      @layer base {
-        html {
-          @apply bg-slate-950;
-        }
-
-        body {
-          @apply min-h-dvh bg-slate-950 font-[var(--font-display)] text-white antialiased;
-          background-image:
-            radial-gradient(circle at top, rgba(251, 191, 36, 0.18), transparent 28%),
-            linear-gradient(180deg, #0f172a 0%, #111827 48%, #020617 100%);
-        }
-      }
-
-      @layer components {
-        .card-frame {
-          @apply relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)];
-          width: 100%;
-          height: 100%;
-        }
-
-        .card-scrim {
-          @apply pointer-events-none absolute inset-0 z-10;
-          background:
-            linear-gradient(180deg, rgba(2, 6, 23, 0.04) 0%, rgba(2, 6, 23, 0.14) 48%, rgba(2, 6, 23, 0.78) 100%);
-        }
-
-        .color-chip {
-          @apply rounded-full border border-white/15 px-2 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.12em] text-white shadow-md sm:text-[0.68rem];
-        }
-
-        .color-chip-white {
-          background: rgba(226, 232, 240, 0.28);
-        }
-
-        .color-chip-red {
-          background: rgba(220, 38, 38, 0.35);
-        }
-
-        .color-chip-green {
-          background: rgba(22, 163, 74, 0.35);
-        }
-
-        .color-chip-blue {
-          background: rgba(37, 99, 235, 0.35);
-        }
-
-        .color-chip-black {
-          background: rgba(15, 23, 42, 0.88);
-        }
-
-        .card-frame.is-missing .noble-fallback {
-          @apply flex;
-        }
-
-        .mode-option {
-          @apply block cursor-pointer rounded-2xl border border-white/12 bg-white/6 px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition hover:bg-white/10;
-        }
-
-        .mode-option:has(input:checked) {
-          @apply border-amber-300 bg-amber-300 text-slate-950;
-        }
-
-        .noble-art-card .color-chip-stack {
-          @apply hidden;
-        }
-      }
-    </style>
   </head>
 
-  <body>
-    <div id="app"></div>
-    <script type="module" src="app.js"></script>
+  <body class="min-h-dvh bg-slate-950 text-white antialiased">
+    <main
+      id="app-shell"
+      class="mx-auto flex min-h-dvh w-full max-w-[1200px] flex-col px-3 py-4 text-white sm:px-4 lg:px-6"
+    >
+      <header class="relative mb-4 text-center sm:mb-5">
+        <a
+          class="inline-block text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300 no-underline transition hover:text-amber-200 focus:outline-none focus-visible:text-amber-100"
+          href="./"
+        >
+          Splendor Randomizer
+        </a>
+        <p
+          id="mode-description"
+          class="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base"
+        >
+          Generate a random set of nobles, share the URL so everyone sees the same
+          tiles, then mark claimed tiles by player as the game moves.
+        </p>
+        <button
+          id="fullscreen-button"
+          class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white transition hover:bg-white/12 focus:outline-none focus-visible:border-amber-300"
+          type="button"
+          aria-label="Toggle fullscreen"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            class="h-5 w-5 fill-none stroke-current stroke-2"
+          >
+            <path d="M8 3H4v4"></path>
+            <path d="M16 3h4v4"></path>
+            <path d="M8 21H4v-4"></path>
+            <path d="M16 21h4v-4"></path>
+          </svg>
+        </button>
+      </header>
+
+      <section
+        class="mb-4 rounded-lg border border-white/12 bg-slate-950/45 p-2.5 shadow-[0_14px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm sm:mb-5 sm:p-3"
+      >
+        <form id="controls-form" class="flex flex-col gap-2">
+          <fieldset class="space-y-3">
+            <legend
+              class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
+            >
+              Tile Type
+            </legend>
+            <div class="grid grid-cols-2 gap-2">
+              <label
+                class="block cursor-pointer rounded-2xl border border-white/12 bg-white/6 px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition has-[:checked]:border-amber-300 has-[:checked]:bg-amber-300 has-[:checked]:text-slate-950 hover:bg-white/10"
+              >
+                <input class="sr-only" type="radio" name="mode" value="nobles" checked />
+                <span>Nobles</span>
+              </label>
+              <label
+                class="block cursor-pointer rounded-2xl border border-white/12 bg-white/6 px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition has-[:checked]:border-amber-300 has-[:checked]:bg-amber-300 has-[:checked]:text-slate-950 hover:bg-white/10"
+              >
+                <input class="sr-only" type="radio" name="mode" value="cities" />
+                <span>Cities</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="grid gap-2 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
+            <label class="block">
+              <span
+                class="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
+              >
+                <span>Tile Count</span>
+                <span
+                  id="count-hint"
+                  class="text-[0.7rem] normal-case tracking-normal text-slate-400"
+                >
+                  max 3
+                </span>
+              </span>
+              <input
+                id="count-input"
+                class="w-full rounded-xl border border-white/12 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
+                type="number"
+                name="count"
+                min="1"
+                max="3"
+                value="3"
+                inputmode="numeric"
+              />
+            </label>
+
+            <label class="block">
+              <span
+                class="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
+              >
+                <span>Players</span>
+                <span class="text-[0.7rem] normal-case tracking-normal text-slate-400">
+                  comma or space separated
+                </span>
+              </span>
+              <input
+                id="players-input"
+                class="w-full rounded-xl border border-white/12 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
+                type="text"
+                name="players"
+                placeholder="Bob Alice Jack Jill"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              id="reroll-button"
+              class="rounded-xl bg-amber-300 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-amber-200"
+              type="button"
+            >
+              Reroll
+            </button>
+            <button
+              id="share-button"
+              class="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white/12"
+              type="button"
+            >
+              Share
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section id="results-section" class="flex-1">
+        <section
+          id="player-summary"
+          class="mb-4 hidden flex-wrap gap-2 rounded-2xl border border-white/10 bg-slate-950/35 p-2.5"
+          aria-label="Player claim summary"
+        ></section>
+        <div id="results-grid" class="result-board" aria-live="polite"></div>
+      </section>
+
+      <details
+        class="mt-8 rounded-lg border border-white/12 bg-slate-950/35 p-4 shadow-[0_18px_55px_rgba(0,0,0,0.18)] backdrop-blur-sm"
+      >
+        <summary
+          class="cursor-pointer list-none text-center text-sm font-black uppercase tracking-[0.22em] text-slate-200"
+        >
+          Reference Grids
+        </summary>
+
+        <div class="mt-5 space-y-8">
+          <section>
+            <div class="mb-4 text-center">
+              <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">
+                Reference
+              </p>
+              <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Noble Layout
+              </h2>
+            </div>
+            <section
+              id="noble-reference-grid"
+              class="noble-board"
+              aria-label="All noble tiles"
+            ></section>
+          </section>
+
+          <section>
+            <div class="mb-4 text-center">
+              <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">
+                Reference
+              </p>
+              <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                All Cities
+              </h2>
+            </div>
+            <section
+              id="city-reference-grid"
+              class="city-board"
+              aria-label="All city tiles"
+            ></section>
+          </section>
+        </div>
+      </details>
+
+      <footer class="mt-6 text-center text-sm text-slate-300">
+        <a
+          id="source-link"
+          class="font-semibold text-amber-300 transition hover:text-amber-200"
+          target="_blank"
+          rel="noreferrer"
+        >
+          View source
+        </a>
+      </footer>
+    </main>
+
+    <main
+      id="error-panel"
+      class="mx-auto hidden min-h-dvh w-full max-w-3xl items-center justify-center px-4 py-8"
+    >
+      <section
+        class="w-full rounded-[2rem] border border-white/12 bg-slate-950/60 p-8 text-center shadow-[0_18px_55px_rgba(0,0,0,0.3)] backdrop-blur-sm"
+      >
+        <p class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">
+          Splendor Randomizer
+        </p>
+        <h1 class="text-3xl font-black tracking-tight text-white sm:text-4xl">
+          Could not load tiles
+        </h1>
+        <p id="error-message" class="mt-3 text-slate-300">Unknown error</p>
+      </section>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

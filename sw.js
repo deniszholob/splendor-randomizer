@@ -1,11 +1,15 @@
-const CACHE_NAME = "splendor-randomizer-v1";
+const CACHE_NAME = "splendor-randomizer-v2";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js",
-  "./combos.json",
   "./manifest.webmanifest",
+  "./src/constants.data.js",
+  "./src/main.js",
+  "./src/render.util.js",
+  "./src/shared.util.js",
+  "./src/state.util.js",
+  "./src/tiles.util.js",
   "./assets/tokens/yellow.webp",
 ];
 
@@ -26,6 +30,7 @@ self.addEventListener("activate", (event) => {
           if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
+
           return Promise.resolve();
         }),
       );
