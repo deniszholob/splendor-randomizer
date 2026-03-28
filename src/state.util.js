@@ -7,6 +7,10 @@ export function createPools(noblePool, cityPool) {
     cityPool,
     nobleById: new Map(noblePool.map((item) => [item.id, item])),
     cityById: new Map(cityPool.map((item) => [item.id, item])),
+    nobleCodeById: new Map(noblePool.map((item, index) => [item.id, String(index + 1)])),
+    cityCodeById: new Map(cityPool.map((item, index) => [item.id, String(index + 1)])),
+    nobleIdByCode: new Map(noblePool.map((item, index) => [String(index + 1), item.id])),
+    cityIdByCode: new Map(cityPool.map((item, index) => [String(index + 1), item.id])),
   };
 }
 
@@ -65,18 +69,38 @@ export function sanitizeClaims(claims, ids, players) {
 export function parseHash(hash, pools) {
   // The URL hash is the shareable source of truth for the visible selection.
   const params = new URLSearchParams(hash.replace(/^#/, ""));
-  const rawMode = params.get("mode");
-  const mode = rawMode === "cities" ? "cities" : "nobles";
-  const rawTiles = params.get("tiles") ?? params.get("ids") ?? "";
-  const ids = rawTiles
-    .split(new RegExp(`[${escapeRegExp(URL_TILE_DELIMITER)},]`))
-    .map((id) => id.trim())
+  const rawMode = params.get("m");
+  const mode = rawMode === "c" ? "cities" : rawMode === "n" ? "nobles" : "";
+
+  if (!mode) {
+    return null;
+  }
+
+  const rawTiles = params.get("t") ?? "";
+  const tileCodes = rawTiles
+    .split(new RegExp(escapeRegExp(URL_TILE_DELIMITER)))
+    .map((code) => code.trim())
     .filter(Boolean);
+  const codeLookup = mode === "cities" ? pools.cityIdByCode : pools.nobleIdByCode;
+  const ids = tileCodes.map((code) => codeLookup.get(code) ?? "");
+
+  if (!ids.length || ids.some((id) => !id)) {
+    return null;
+  }
+
   const maxCount = Math.max(getMaxCount(pools, mode), 1);
-  const rawCount = Number.parseInt(params.get("count") ?? "3", 10);
-  const fallbackCount = Number.isFinite(rawCount) ? rawCount : 3;
-  const count = clamp(ids.length || fallbackCount, 1, maxCount);
-  const players = normalizePlayers(params.get("players") ?? "");
+  const rawCountParam = params.get("c");
+  const rawCount = rawCountParam === null
+    ? ids.length
+    : Number.parseInt(rawCountParam, 10);
+
+  if (!Number.isFinite(rawCount)) {
+    return null;
+  }
+
+  const fallbackCount = rawCount;
+  const count = clamp(rawCountParam === null ? ids.length : fallbackCount, 1, maxCount);
+  const players = normalizePlayers(params.get("p") ?? "");
 
   return { mode, count, ids, players };
 }
@@ -123,14 +147,22 @@ export function generateRandomState(
   };
 }
 
-export function serializeState(state) {
+export function serializeState(state, pools, { countOverridden = false } = {}) {
   const params = new URLSearchParams();
-  params.set("mode", state.mode);
-  params.set("count", String(state.count));
-  params.set("tiles", state.ids.join(URL_TILE_DELIMITER));
+  params.set("m", state.mode === "cities" ? "c" : "n");
+  params.set(
+    "t",
+    state.ids
+      .map((id) => encodeTileId(pools, state.mode, id))
+      .join(URL_TILE_DELIMITER),
+  );
 
   if (state.players.length > 0) {
-    params.set("players", state.players.join("."));
+    params.set("p", state.players.join(URL_TILE_DELIMITER));
+  }
+
+  if (countOverridden || state.players.length === 0) {
+    params.set("c", String(state.count));
   }
 
   return `#${params.toString()}`;
@@ -146,4 +178,9 @@ export function getSelection(pools, state) {
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function encodeTileId(pools, mode, id) {
+  const codeLookup = mode === "cities" ? pools.cityCodeById : pools.nobleCodeById;
+  return codeLookup.get(id) ?? "";
 }

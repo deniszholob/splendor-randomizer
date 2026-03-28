@@ -464,7 +464,9 @@ function commitState(state, replace = false) {
   // normalized back into the URL so the view remains shareable.
   const normalized = sanitizeState(pools, state, ui.localClaims);
   ui.localClaims = normalized.claims;
-  const nextHash = serializeState(normalized);
+  const nextHash = serializeState(normalized, pools, {
+    countOverridden: ui.countOverridden,
+  });
 
   if (replace) {
     window.history.replaceState(null, "", nextHash);
@@ -486,20 +488,31 @@ function renderFromHash() {
   ui.localClaims = {};
   ui.activeClaimTileId = "";
   ui.playerDraft = "";
-  const nextState = sanitizeState(
-    pools,
-    parseHash(window.location.hash, pools),
-  );
+  const parsedState = parseHash(window.location.hash, pools);
+
+  if (!parsedState) {
+    resetInvalidHashState();
+    return;
+  }
+
+  const nextState = sanitizeState(pools, parsedState);
   ui.countOverridden =
     nextState.count !== getDerivedCount(nextState.mode, nextState.players, pools);
   commitState(nextState, true);
 }
 
 function renderCurrentState() {
+  const parsedState = parseHash(window.location.hash, pools);
+
+  if (!parsedState) {
+    resetInvalidHashState();
+    return;
+  }
+
   renderState(
     sanitizeState(
       pools,
-      parseHash(window.location.hash, pools),
+      parsedState,
       ui.localClaims,
     ),
   );
@@ -520,9 +533,20 @@ function renderState(state) {
 }
 
 function getCurrentState() {
+  const parsedState = parseHash(window.location.hash, pools);
+
+  if (!parsedState) {
+    resetInvalidHashState();
+    return sanitizeState(
+      pools,
+      parseHash(window.location.hash, pools),
+      ui.localClaims,
+    );
+  }
+
   return sanitizeState(
     pools,
-    parseHash(window.location.hash, pools),
+    parsedState,
     ui.localClaims,
   );
 }
@@ -712,6 +736,19 @@ function getDerivedCount(mode, players, sourcePools) {
   const baseCount = mode === "cities" ? 3 : Math.max(playerCount + 1, 1);
 
   return clamp(baseCount, 1, getMaxCount(sourcePools, mode));
+}
+
+function resetInvalidHashState() {
+  const mode = getSelectedMode();
+  const players = normalizePlayers(elements.playersInput.value);
+  const nextCount = getDerivedCount(mode, players, pools);
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}`,
+  );
+  ui.countOverridden = false;
+  commitState(generateRandomState(pools, mode, nextCount, players), true);
 }
 
 function syncCountPreview(players, draft = "") {
