@@ -11,17 +11,18 @@ const CITY_IMAGES = new Set([
   "city-11.webp",
   "city-12.webp",
   "city-13.webp",
-  "city-14.webp",
-  "city-15.webp",
   "city-21.webp",
   "city-22.webp",
   "city-23.webp",
-  "city-24.webp",
-  "city-25.webp",
   "city-31.webp",
   "city-32.webp",
   "city-33.webp",
-  "city-35.webp",
+  "city-41.webp",
+  "city-42.webp",
+  "city-43.webp",
+  "city-51.webp",
+  "city-52.webp",
+  "city-53.webp",
 ]);
 const EXISTING_NOBLE_IMAGES = new Set([
   "black-blue-green.webp",
@@ -52,6 +53,7 @@ const root = document.getElementById("app");
 
 let noblePool = [];
 let cityPool = [];
+let referenceSectionOpen = false;
 
 void init();
 
@@ -93,15 +95,43 @@ function buildNoblePool(combos) {
 }
 
 function buildCityPool() {
-  return [...CITY_IMAGES].map((filename) => {
-    return {
-      kind: "cities",
-      id: filename.replace(".webp", ""),
-      filename,
-      image: `assets/cities/${filename}`,
-      title: filename.replace(".webp", "").replaceAll("-", " "),
-    };
-  });
+  return [...CITY_IMAGES]
+    .map((filename) => {
+      return {
+        kind: "cities",
+        id: filename.replace(".webp", ""),
+        filename,
+        image: `assets/cities/${filename}`,
+        title: filename.replace(".webp", "").replaceAll("-", " "),
+      };
+    })
+    .sort((left, right) => {
+      const leftPosition = getCityPosition(left.filename);
+      const rightPosition = getCityPosition(right.filename);
+
+      if (leftPosition.row !== rightPosition.row) {
+        return leftPosition.row - rightPosition.row;
+      }
+
+      if (leftPosition.column !== rightPosition.column) {
+        return leftPosition.column - rightPosition.column;
+      }
+
+      return left.filename.localeCompare(right.filename);
+    });
+}
+
+function getCityPosition(filename) {
+  const match = filename.match(/^city-(\d)(\d)/);
+
+  if (!match) {
+    return { row: Number.POSITIVE_INFINITY, column: Number.POSITIVE_INFINITY };
+  }
+
+  return {
+    row: Number.parseInt(match[1], 10),
+    column: Number.parseInt(match[2], 10),
+  };
 }
 
 function normalizeColors(colors) {
@@ -400,6 +430,10 @@ function createReferenceSection() {
   const section = document.createElement("details");
   section.className =
     "mt-8 rounded-[1.5rem] border border-white/12 bg-slate-950/35 p-4 shadow-[0_18px_55px_rgba(0,0,0,0.18)] backdrop-blur-sm";
+  section.open = referenceSectionOpen;
+  section.addEventListener("toggle", () => {
+    referenceSectionOpen = section.open;
+  });
 
   const summary = document.createElement("summary");
   summary.className =
@@ -413,7 +447,7 @@ function createReferenceSection() {
   nobleSection.innerHTML = `
     <div class="mb-4 text-center">
       <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Reference</p>
-      <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">All Nobles</h2>
+      <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">All Nobles <span class="text-slate-400">(${noblePool.length})</span></h2>
     </div>
   `;
 
@@ -458,7 +492,7 @@ function createReferenceSection() {
   citySection.innerHTML = `
     <div class="mb-4 text-center">
       <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Reference</p>
-      <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">All Cities</h2>
+      <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">All Cities <span class="text-slate-400">(${cityPool.length})</span></h2>
     </div>
   `;
 
