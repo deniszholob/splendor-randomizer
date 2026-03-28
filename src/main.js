@@ -21,6 +21,7 @@ const renderer = createRenderer(elements);
 
 const ui = {
   activeClaimTileId: "",
+  countOverridden: false,
   localClaims: {},
   nobleReferenceView: "picture",
   playerDraft: "",
@@ -41,7 +42,7 @@ async function init() {
     renderer.showApp();
 
     if (!window.location.hash) {
-      commitState(generateRandomState(pools, "nobles", 3));
+      commitState(generateRandomState(pools, "nobles", getDerivedCount("nobles", [], pools)));
       return;
     }
 
@@ -64,6 +65,27 @@ function bindEvents() {
 
     if (target.matches('input[name="mode"]')) {
       commitFromControls();
+      return;
+    }
+
+    if (target.matches("#count-override-input")) {
+      ui.countOverridden = elements.countOverrideInput.checked;
+
+      if (!ui.countOverridden) {
+        const currentState = getCurrentState();
+        const nextCount = getDerivedCount(currentState.mode, currentState.players, pools);
+        commitState(
+          generateRandomState(
+            pools,
+            currentState.mode,
+            nextCount,
+            currentState.players,
+          ),
+        );
+        return;
+      }
+
+      renderCurrentState();
     }
   });
 
@@ -105,6 +127,10 @@ function bindEvents() {
   });
 
   elements.countInput.addEventListener("input", () => {
+    if (!ui.countOverridden) {
+      return;
+    }
+
     const mode = getSelectedMode();
     elements.countHint.textContent = `max ${getMaxCount(pools, mode)}`;
 
@@ -112,15 +138,23 @@ function bindEvents() {
       return;
     }
 
-    commitFromControls();
+    commitFromControls(true);
   });
 
   elements.countInput.addEventListener("blur", () => {
-    commitFromControls();
+    if (!ui.countOverridden) {
+      return;
+    }
+
+    commitFromControls(elements.countInput.value !== "");
   });
 
   elements.countInput.addEventListener("change", () => {
-    commitFromControls();
+    if (!ui.countOverridden) {
+      return;
+    }
+
+    commitFromControls(elements.countInput.value !== "");
   });
 
   elements.rerollButton.addEventListener("click", () => {
@@ -336,25 +370,56 @@ async function fetchAssetSignature(target) {
 }
 
 function commitPlayers() {
+  const currentState = getCurrentState();
   const nextPlayers = normalizePlayers([
     ...normalizePlayers(elements.playersInput.value),
     ...normalizePlayers(ui.playerDraft),
-  ]).join(" ");
-  syncPlayerEditor(nextPlayers, "", false);
+  ]);
+  const nextCount = ui.countOverridden
+    ? clamp(currentState.count, 1, getMaxCount(pools, currentState.mode))
+    : getDerivedCount(currentState.mode, nextPlayers, pools);
 
-  const currentState = getCurrentState();
+  syncPlayerEditor(nextPlayers.join(" "), "", false);
+
+  if (currentState.count !== nextCount) {
+    commitState(
+      generateRandomState(
+        pools,
+        currentState.mode,
+        nextCount,
+        nextPlayers,
+      ),
+    );
+    return;
+  }
+
   commitState({
     ...currentState,
     players: nextPlayers,
+    count: nextCount,
   });
 }
 
-function commitFromControls() {
+function commitFromControls(manualCount = false) {
+  const currentState = getCurrentState();
   const mode = getSelectedMode();
+  const players = normalizePlayers(elements.playersInput.value);
   const maxCount = getMaxCount(pools, mode);
   const rawCount = Number.parseInt(elements.countInput.value, 10);
-  const count = clamp(Number.isFinite(rawCount) ? rawCount : 1, 1, maxCount);
-  const currentState = getCurrentState();
+  const derivedCount = getDerivedCount(mode, players, pools);
+  const count = clamp(
+    manualCount
+      ? (Number.isFinite(rawCount) ? rawCount : derivedCount)
+      : (ui.countOverridden
+          ? (Number.isFinite(rawCount) ? rawCount : currentState.count)
+          : derivedCount),
+    1,
+    maxCount,
+  );
+
+  if (manualCount) {
+    ui.countOverridden = true;
+  }
 
   elements.countInput.max = String(maxCount);
   elements.countInput.value = String(count);
@@ -425,6 +490,8 @@ function renderFromHash() {
     pools,
     parseHash(window.location.hash, pools),
   );
+  ui.countOverridden =
+    nextState.count !== getDerivedCount(nextState.mode, nextState.players, pools);
   commitState(nextState, true);
 }
 
@@ -443,6 +510,7 @@ function renderState(state) {
   renderer.renderApp({
     pools,
     activeClaimTileId: ui.activeClaimTileId,
+    countOverridden: ui.countOverridden,
     nobleReferenceView: ui.nobleReferenceView,
     state: {
       ...state,
@@ -556,6 +624,7 @@ function getElements() {
     controlsForm: document.getElementById("controls-form"),
     countHint: document.getElementById("count-hint"),
     countInput: document.getElementById("count-input"),
+    countOverrideInput: document.getElementById("count-override-input"),
     errorMessage: document.getElementById("error-message"),
     errorPanel: document.getElementById("error-panel"),
     fullscreenButton: document.getElementById("fullscreen-button"),
@@ -594,7 +663,7 @@ function handlePlayerDraftInput() {
 function syncPlayerEditor(value, draft = "", commitStateImmediately = false) {
   const players = normalizePlayers(value);
   ui.playerDraft = formatPlayerDraft(draft).replace(/[,\s.~]+/g, "");
-  elements.playersInput.value = value;
+  elements.playersInput.value = players.join(" ");
   elements.playersEditorList.innerHTML = renderPlayerEditorMarkup(players);
   elements.playersEditorInput.value = ui.playerDraft;
   elements.playersEditor.classList.toggle("has-values", players.length > 0);
@@ -602,12 +671,21 @@ function syncPlayerEditor(value, draft = "", commitStateImmediately = false) {
     "hidden",
     players.length === 0 && !ui.playerDraft,
   );
+  syncCountPreview(players, ui.playerDraft);
 
   if (commitStateImmediately) {
     const currentState = getCurrentState();
+    const nextCount = ui.countOverridden
+      ? clamp(currentState.count, 1, getMaxCount(pools, currentState.mode))
+      : getDerivedCount(
+          currentState.mode,
+          [...players, ...normalizePlayers(ui.playerDraft)],
+          pools,
+        );
     commitState({
       ...currentState,
       players: players.join(" "),
+      count: nextCount,
     });
   }
 }
@@ -627,4 +705,33 @@ function renderPlayerToken(player, index) {
       ${escapeHtml(player)}
     </span>
   `;
+}
+
+function getDerivedCount(mode, players, sourcePools) {
+  const playerCount = normalizePlayers(players).length;
+  const baseCount = mode === "cities" ? 3 : Math.max(playerCount + 1, 1);
+
+  return clamp(baseCount, 1, getMaxCount(sourcePools, mode));
+}
+
+function syncCountPreview(players, draft = "") {
+  if (!pools) {
+    return;
+  }
+
+  const mode = getSelectedMode();
+  const maxCount = getMaxCount(pools, mode);
+  elements.countInput.max = String(maxCount);
+  elements.countHint.textContent = `max ${maxCount}`;
+
+  if (ui.countOverridden) {
+    return;
+  }
+
+  const derivedCount = getDerivedCount(
+    mode,
+    [...normalizePlayers(players), ...normalizePlayers(draft)],
+    pools,
+  );
+  elements.countInput.value = String(derivedCount);
 }

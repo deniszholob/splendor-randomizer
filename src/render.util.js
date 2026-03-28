@@ -18,9 +18,9 @@ export function createRenderer(elements) {
   let referenceSignature = "";
 
   return {
-    renderApp({ nobleReferenceView, pools, state, activeClaimTileId }) {
+    renderApp({ countOverridden, nobleReferenceView, pools, state, activeClaimTileId }) {
       document.title = "Splendor Randomizer";
-      syncControls(elements, pools, state, nobleReferenceView);
+      syncControls(elements, pools, state, nobleReferenceView, countOverridden);
       elements.modeDescription.textContent = `Generate a random set of ${state.mode}, share the URL so everyone sees the same tiles, then mark claimed tiles by player as the game moves.`;
       elements.results.className =
         state.mode === "cities"
@@ -68,7 +68,7 @@ export function createRenderer(elements) {
   };
 }
 
-function syncControls(elements, pools, state, nobleReferenceView) {
+function syncControls(elements, pools, state, nobleReferenceView, countOverridden) {
   const maxCount =
     state.mode === "cities" ? pools.cityPool.length : pools.noblePool.length;
 
@@ -77,6 +77,8 @@ function syncControls(elements, pools, state, nobleReferenceView) {
   });
   elements.countInput.max = String(maxCount);
   elements.countInput.value = String(state.count);
+  elements.countInput.disabled = !countOverridden;
+  elements.countOverrideInput.checked = countOverridden;
   elements.countHint.textContent = `max ${maxCount}`;
 
   if (!DEV_MODE) {

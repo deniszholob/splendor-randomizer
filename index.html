@@ -95,31 +95,7 @@
             </div>
           </fieldset>
 
-          <div class="grid gap-2 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
-            <label class="block">
-              <span
-                class="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
-              >
-                <span>Tile Count</span>
-                <span
-                  id="count-hint"
-                  class="text-[0.7rem] normal-case tracking-normal text-slate-400"
-                >
-                  max 3
-                </span>
-              </span>
-              <input
-                id="count-input"
-                class="w-full rounded-lg border border-white/10 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
-                type="number"
-                name="count"
-                min="1"
-                max="3"
-                value="3"
-                inputmode="numeric"
-              />
-            </label>
-
+          <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,180px)]">
             <label class="block">
               <span
                 class="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
@@ -152,6 +128,43 @@
                 >
                   ×
                 </button>
+              </div>
+            </label>
+
+            <label class="block">
+              <span
+                class="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
+              >
+                <span>Tile Count</span>
+                <span
+                  id="count-hint"
+                  class="text-[0.7rem] normal-case tracking-normal text-slate-400"
+                >
+                  max 3
+                </span>
+              </span>
+              <div class="flex items-center gap-2">
+                <input
+                  id="count-input"
+                  class="w-full rounded-lg border border-white/10 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300 disabled:cursor-not-allowed disabled:border-white/6 disabled:bg-slate-900/45 disabled:text-slate-500"
+                  type="number"
+                  name="count"
+                  min="1"
+                  max="3"
+                  value="3"
+                  inputmode="numeric"
+                  disabled
+                />
+                <label
+                  class="flex shrink-0 items-center gap-1.5 text-[0.7rem] font-bold normal-case tracking-normal text-slate-400"
+                >
+                  <input
+                    id="count-override-input"
+                    class="h-3.5 w-3.5 rounded border-white/20 bg-slate-900/90 text-amber-300"
+                    type="checkbox"
+                  />
+                  <span>Override</span>
+                </label>
               </div>
             </label>
           </div>
