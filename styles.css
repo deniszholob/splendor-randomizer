@@ -67,10 +67,14 @@
 }
 
 @media (max-width: 767px) {
-  .result-board,
-  .result-board-cities {
+  .result-board {
     gap: 0.5rem;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .result-board-cities {
+    gap: 0.5rem;
+    grid-template-columns: 1fr;
   }
 
   .noble-board {
@@ -78,8 +82,17 @@
     width: 100%;
   }
 
+  .noble-board .badge-pill {
+    display: none;
+  }
+
+  .noble-board > .card-frame > .absolute.right-2.top-2.z-20,
+  .noble-board > .card-frame > .absolute.left-2.top-2.z-20 {
+    display: none;
+  }
+
   .city-board {
     gap: 0.5rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

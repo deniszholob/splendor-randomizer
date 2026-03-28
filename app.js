@@ -54,6 +54,8 @@ const root = document.getElementById("app");
 let noblePool = [];
 let cityPool = [];
 let referenceSectionOpen = false;
+let pendingFocus = null;
+let wakeLockHandle = null;
 
 void init();
 
@@ -246,6 +248,7 @@ function renderState(state) {
   );
 
   root.replaceChildren(page);
+  restorePendingFocus();
 }
 
 function createHeader(state) {
@@ -339,6 +342,14 @@ function createControls(state) {
   const actionRow = document.createElement("div");
   actionRow.className = "grid grid-cols-2 gap-2";
 
+  const preserveCountFocus = () => {
+    pendingFocus = {
+      selector: 'input[name="count"]',
+      start: countInput.selectionStart,
+      end: countInput.selectionEnd,
+    };
+  };
+
   const commitFromForm = () => {
     const selectedMode =
       form.querySelector('input[name="mode"]:checked')?.value === "cities"
@@ -368,6 +379,7 @@ function createControls(state) {
         clamp(Number.parseInt(countInput.value, 10) || 1, 1, nextMax),
       );
       countHint.textContent = `max ${nextMax}`;
+      preserveCountFocus();
       commitFromForm();
     });
   }
@@ -383,6 +395,7 @@ function createControls(state) {
       getMaxCount(selectedMode),
     );
     countHint.textContent = `max ${getMaxCount(selectedMode)}`;
+    preserveCountFocus();
     commitState(generateRandomState(selectedMode, nextCount));
   });
 
@@ -399,7 +412,8 @@ function createResults(state, selection) {
   const resultHeader = document.createElement("div");
   resultHeader.className =
     "mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between";
-  resultHeader.innerHTML = `
+  const headingBlock = document.createElement("div");
+  headingBlock.innerHTML = `
     <div>
       <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Result</p>
       <h2 class="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">
@@ -407,6 +421,15 @@ function createResults(state, selection) {
       </h2>
     </div>
   `;
+
+  const fullscreenButton = document.createElement("button");
+  fullscreenButton.className =
+    "self-start rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white/12 sm:self-auto";
+  fullscreenButton.type = "button";
+  fullscreenButton.textContent = "Fullscreen";
+  fullscreenButton.addEventListener("click", toggleFullscreenMode);
+
+  resultHeader.append(headingBlock, fullscreenButton);
 
   const grid = document.createElement("div");
   grid.className =
@@ -620,7 +643,7 @@ function createTokenCard(color) {
 function createBadge(text) {
   const badge = document.createElement("span");
   badge.className =
-    "absolute right-2 top-2 z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:right-3 sm:top-3 sm:text-[0.68rem]";
+    "badge-pill absolute right-2 top-2 z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:right-3 sm:top-3 sm:text-[0.68rem]";
   badge.textContent = text;
   return badge;
 }
@@ -628,7 +651,7 @@ function createBadge(text) {
 function createLeftBadge(text) {
   const badge = document.createElement("span");
   badge.className =
-    "absolute left-2 top-2 z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:left-3 sm:top-3 sm:text-[0.68rem]";
+    "badge-pill absolute left-2 top-2 z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:left-3 sm:top-3 sm:text-[0.68rem]";
   badge.textContent = text;
   return badge;
 }
@@ -726,15 +749,10 @@ function handleImageError(event) {
 
 async function shareCurrentSelection() {
   const shareUrl = window.location.href;
-  const shareText = "Splendor Randomizer tiles";
 
   if (navigator.share) {
     try {
-      await navigator.share({
-        title: document.title,
-        text: shareText,
-        url: shareUrl,
-      });
+      await navigator.share({ url: shareUrl });
       return;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -777,4 +795,64 @@ function renderError(error) {
   `;
 
   root.replaceChildren(panel);
+}
+
+function restorePendingFocus() {
+  if (!pendingFocus) {
+    return;
+  }
+
+  const target = root.querySelector(pendingFocus.selector);
+  if (!(target instanceof HTMLInputElement)) {
+    pendingFocus = null;
+    return;
+  }
+
+  target.focus();
+  if (
+    typeof pendingFocus.start === "number" &&
+    typeof pendingFocus.end === "number"
+  ) {
+    target.setSelectionRange(pendingFocus.start, pendingFocus.end);
+  }
+  pendingFocus = null;
+}
+
+async function toggleFullscreenMode() {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      await releaseWakeLock();
+      return;
+    }
+
+    await document.documentElement.requestFullscreen();
+    await requestWakeLock();
+  } catch (_error) {
+    // Ignore unsupported fullscreen and wake-lock failures.
+  }
+}
+
+async function requestWakeLock() {
+  if (!("wakeLock" in navigator) || wakeLockHandle) {
+    return;
+  }
+
+  try {
+    wakeLockHandle = await navigator.wakeLock.request("screen");
+    wakeLockHandle.addEventListener("release", () => {
+      wakeLockHandle = null;
+    });
+  } catch (_error) {
+    wakeLockHandle = null;
+  }
+}
+
+async function releaseWakeLock() {
+  if (!wakeLockHandle) {
+    return;
+  }
+
+  await wakeLockHandle.release();
+  wakeLockHandle = null;
 }

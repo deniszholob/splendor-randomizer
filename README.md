@@ -16,7 +16,9 @@ If you find the cheat sheet or the source code useful, consider:
 
 # Screenshots
 
-![Splendor Randomizer](./global/assets/screenshots/screenshot-1.png)
+![Splendor Randomizer Full](./assets/screenshots/splendor-randomizer-fullpage.png)
+![Splendor Randomizer Cities](./assets/screenshots/splendor-randomizer-cities.png)
+![Splendor Randomizer Nobels](./assets/screenshots/splendor-randomizer-nobels.png)
 
 # Credits:
 
