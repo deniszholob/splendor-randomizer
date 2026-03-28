@@ -7,6 +7,23 @@ const COLOR_LABELS = {
   blue: "Blue",
   black: "Black",
 };
+const CITY_IMAGES = [
+  "city-11.webp",
+  "city-12.webp",
+  "city-13.webp",
+  "city-14.webp",
+  "city-15.webp",
+  "city-21.webp",
+  "city-22.webp",
+  "city-23.webp",
+  "city-24.webp",
+  "city-25.webp",
+  "city-31.webp",
+  "city-32.webp",
+  "city-33.webp",
+  "city-35.webp",
+  "city-35-2.webp",
+];
 
 const root = document.getElementById("app");
 
@@ -56,7 +73,7 @@ function buildImagePath(colors) {
 }
 
 function renderPage(pairs, triplets) {
-  document.title = "Splendor Noble Grid";
+  document.title = "Splendor Noble And City Grid";
 
   const page = document.createElement("main");
   page.className =
@@ -65,9 +82,9 @@ function renderPage(pairs, triplets) {
   page.innerHTML = `
     <header class="mb-4 shrink-0 text-center lg:mb-5">
       <p class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Splendor Randomizer</p>
-      <h1 class="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">All Nobles</h1>
+      <h1 class="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">Nobles And Cities</h1>
       <p class="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base">
-        Doubles sit to the left of the diagonal, triplets sit to the right, and the tokens run down the diagonal.
+        Doubles sit to the left of the diagonal, triplets sit to the right, the tokens run down the diagonal, and all city cards are shown below.
       </p>
     </header>
   `;
@@ -115,8 +132,31 @@ function renderPage(pairs, triplets) {
     <a class="font-semibold text-amber-300 transition hover:text-amber-200" href="${GITHUB_LINK}" target="_blank" rel="noreferrer">View source</a>
   `;
 
-  page.append(board, footer);
+  page.append(board, createCitiesSection(), footer);
   root.replaceChildren(page);
+}
+
+function createCitiesSection() {
+  const section = document.createElement("section");
+  section.className = "mt-6";
+  section.setAttribute("aria-label", "Splendor city grid");
+
+  const heading = document.createElement("div");
+  heading.className = "mb-4 text-center";
+  heading.innerHTML = `
+    <p class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Expansion</p>
+    <h2 class="text-2xl font-black tracking-tight text-white sm:text-3xl">All Cities</h2>
+  `;
+
+  const grid = document.createElement("section");
+  grid.className = "city-board";
+
+  for (const filename of CITY_IMAGES) {
+    grid.append(createCityCard(filename));
+  }
+
+  section.append(heading, grid);
+  return section;
 }
 
 function createTokenCard(color) {
@@ -196,10 +236,46 @@ function createNobleCard(combo, badgeText, ariaLabel) {
   return card;
 }
 
+function createCityCard(filename) {
+  const title = filename.replace(".webp", "").replaceAll("-", " ");
+  const card = document.createElement("article");
+  card.className = "card-frame city-card";
+  card.setAttribute("aria-label", title);
+
+  const fallback = createFallbackContent(title, filename, "City image missing");
+
+  const image = document.createElement("img");
+  image.className = "absolute inset-0 z-10 h-full w-full object-cover";
+  image.src = `assets/cities/${filename}`;
+  image.alt = title;
+  image.loading = "lazy";
+
+  const scrim = document.createElement("div");
+  scrim.className = "card-scrim";
+
+  const badge = createLeftBadge("City");
+
+  image.addEventListener("error", () => {
+    card.classList.add("is-missing");
+    image.remove();
+  });
+
+  card.append(fallback, image, scrim, badge);
+  return card;
+}
+
 function createBadge(text) {
   const badge = document.createElement("span");
   badge.className =
     "absolute right-2 top-2 z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:right-3 sm:top-3 sm:text-[0.68rem]";
+  badge.textContent = text;
+  return badge;
+}
+
+function createLeftBadge(text) {
+  const badge = document.createElement("span");
+  badge.className =
+    "absolute left-2 top-2 z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:left-3 sm:top-3 sm:text-[0.68rem]";
   badge.textContent = text;
   return badge;
 }

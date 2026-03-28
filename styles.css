@@ -22,6 +22,16 @@
   aspect-ratio: 1;
 }
 
+.city-board {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.city-card {
+  aspect-ratio: 400 / 170;
+}
+
 .noble-fallback {
   gap: 10px;
   padding: 18px;
@@ -61,5 +71,10 @@
   .noble-board {
     gap: 0.35rem;
     width: 100%;
+  }
+
+  .city-board {
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
