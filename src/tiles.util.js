@@ -21,7 +21,7 @@ export function buildImagePath(colors) {
 }
 
 export function buildNoblePool() {
-  return NOBLE_COLOR_COMBOS.map((colors) => {
+  return NOBLE_COLOR_COMBOS.map((colors, index) => {
     const normalizedColors = normalizeColors(colors);
 
     return {
@@ -29,6 +29,8 @@ export function buildNoblePool() {
       id: comboId(normalizedColors),
       colors: normalizedColors,
       image: buildImagePath(normalizedColors),
+      number: index + 1,
+      title: `Noble ${index + 1}`,
     };
   });
 }

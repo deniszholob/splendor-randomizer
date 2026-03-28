@@ -269,7 +269,8 @@ function renderNobleCard(
       ${interactionAttrs}
     >
       ${imageMarkup}
-      ${showReferenceBadges ? renderBadge(badgeText, "right-2 top-2 sm:right-3 sm:top-3") : ""}
+      ${renderBadge(`Noble ${combo.number}`, "right-0.5 top-2 sm:right-3 sm:top-3")}
+      ${showReferenceBadges ? renderBadge(badgeText, "right-0.5 top-2 sm:right-3 sm:top-3") : ""}
       ${interactive ? renderClaimBadge(claimedBy, players) : ""}
       ${showColorChips ? renderColorChips(combo.colors) : ""}
       ${claimPanel}
@@ -370,7 +371,7 @@ function renderTokenCard(
             <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
           `
       }
-      ${showReferenceBadges ? renderBadge("Token", "right-2 top-2 sm:right-3 sm:top-3") : ""}
+      ${showReferenceBadges ? renderBadge("Token", "right-0.5 top-2 sm:right-3 sm:top-3") : ""}
       ${showColorChips ? renderColorChips([color]) : ""}
     </article>
   `;
@@ -378,7 +379,7 @@ function renderTokenCard(
 
 function renderBadge(text, positionClasses) {
   return `
-    <span class="badge-pill absolute z-20 rounded-full border border-white/15 bg-slate-950/85 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white shadow-lg sm:text-[0.68rem] ${positionClasses}">
+    <span class="badge-pill absolute z-20 ${positionClasses}">
       ${escapeHtml(text)}
     </span>
   `;

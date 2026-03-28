@@ -147,6 +147,26 @@ body {
     );
 }
 
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100% - 1rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  background: rgba(2, 6, 23, 0.85);
+  padding: clamp(0.18rem, 0.32vw, 0.25rem) clamp(0.45rem, 0.7vw, 0.65rem);
+  font-size: clamp(0.48rem, 0.72vw, 0.68rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  color: #fff;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
 .color-chip-white {
   background: rgba(226, 232, 240, 0.28);
 }
@@ -300,6 +320,15 @@ body {
 }
 
 @media (max-width: 767px) {
+  .noble-board .badge-pill,
+  .city-board .badge-pill {
+    max-width: calc(100% - 0.7rem);
+    padding: 0.14rem 0.2rem;
+    font-size: 0.42rem;
+    letter-spacing: 0.08em;
+    line-height: 0.2rem;
+  }
+
   .result-board {
     gap: 0.5rem;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
