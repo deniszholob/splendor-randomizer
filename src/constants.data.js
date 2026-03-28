@@ -37,7 +37,8 @@ export const CITY_IMAGES = [
   "city-15+1.webp",
   "city-16+5.webp",
   "city-17.webp",
-  "city-28-x.webp",
+  "city-28-x-2.webp",
+  // "city-28-x.webp",
 ];
 
 export const NOBLE_COLOR_COMBOS = [

@@ -18,7 +18,13 @@ export function createRenderer(elements) {
   let referenceSignature = "";
 
   return {
-    renderApp({ countOverridden, nobleReferenceView, pools, state, activeClaimTileId }) {
+    renderApp({
+      countOverridden,
+      nobleReferenceView,
+      pools,
+      state,
+      activeClaimTileId,
+    }) {
       document.title = "Splendor Randomizer";
       syncControls(elements, pools, state, nobleReferenceView, countOverridden);
       elements.modeDescription.textContent = `Generate a random set of ${state.mode}, share the URL so everyone sees the same tiles, then mark claimed tiles by player as the game moves.`;
@@ -68,7 +74,13 @@ export function createRenderer(elements) {
   };
 }
 
-function syncControls(elements, pools, state, nobleReferenceView, countOverridden) {
+function syncControls(
+  elements,
+  pools,
+  state,
+  nobleReferenceView,
+  countOverridden,
+) {
   const maxCount =
     state.mode === "cities" ? pools.cityPool.length : pools.noblePool.length;
 
@@ -79,7 +91,7 @@ function syncControls(elements, pools, state, nobleReferenceView, countOverridde
   elements.countInput.value = String(state.count);
   elements.countInput.disabled = !countOverridden;
   elements.countOverrideInput.checked = countOverridden;
-  elements.countHint.textContent = `max ${maxCount}`;
+  elements.countHint.textContent = "Override";
 
   if (!DEV_MODE) {
     elements.nobleViewSwitcher.hidden = true;
@@ -235,7 +247,7 @@ function renderNobleCard(
         "Noble image missing",
       )}
       <img
-        class="tile-image absolute inset-0 z-10 h-full w-full object-cover"
+        class="tile-image noble-image absolute inset-0 z-10 h-full w-full object-cover"
         alt="${escapeHtml(ariaLabel)}"
         loading="lazy"
         data-image-kind="noble"
@@ -251,7 +263,7 @@ function renderNobleCard(
 
   return `
     <article
-      class="card-frame noble-card noble-art-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} ${isSelected ? "is-selected" : ""}"
+      class="card-frame noble-card noble-art-card relative isolate overflow-hidden rounded-xl border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} ${isSelected ? "is-selected" : ""}"
       aria-label="${escapeHtml(ariaLabel)}"
       style="${cardStyle}"
       ${interactionAttrs}
@@ -291,7 +303,7 @@ function renderCityCard(
 
   return `
     <article
-      class="card-frame city-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} ${isSelected ? "is-selected" : ""}"
+      class="card-frame city-card relative isolate overflow-hidden rounded-xl border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} ${isSelected ? "is-selected" : ""}"
       aria-label="${escapeHtml(city.title)}"
       style="${claimedBy ? claimTintStyle(claimedBy, players) : ""}"
       ${interactionAttrs}
@@ -337,7 +349,7 @@ function renderTokenCard(
 
   return `
     <article
-      class="card-frame noble-card noble-art-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)]"
+      class="card-frame noble-card noble-art-card token-card relative isolate overflow-hidden rounded-full border border-white/8 bg-slate-900/50 shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
       aria-label="${escapeHtml(ariaLabel)}"
     >
       ${
@@ -408,12 +420,14 @@ function renderClaimPanel(tileId, players, claimedBy, activeClaimTileId) {
     return '<div class="claim-panel hidden"></div>';
   }
 
+  const columnCount = players.length <= 3 ? 1 : 2;
+
   return `
-    <div class="claim-panel absolute inset-0 z-40 p-2 sm:p-3">
-      <div class="claim-overlay absolute inset-0 rounded-[1.2rem] border border-white/10 backdrop-blur-xs"></div>
+    <div class="claim-panel absolute inset-0 z-40 p-1">
+      <div class="claim-overlay absolute inset-0 rounded-xl border border-white/10 backdrop-blur-xs"></div>
       <div
-        class="claim-picker relative z-10 grid h-full w-full grid-cols-2 gap-2"
-        style="grid-auto-rows: minmax(0, 1fr);"
+        class="claim-picker relative z-10 grid h-full w-full gap-2"
+        style="grid-template-columns: repeat(${columnCount}, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr);"
       >
         ${players
           .map((player) => {
@@ -434,7 +448,8 @@ function renderClaimPanel(tileId, players, claimedBy, activeClaimTileId) {
           .join("")}
         <button
           type="button"
-          class="claim-open-button col-span-2 rounded-md border border-white/20 bg-white/88 px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-950 shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+          class="claim-open-button rounded-md border border-white/20 bg-white/88 px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-950 shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+          style="grid-column: 1 / -1;"
           data-claim-tile="${escapeHtml(tileId)}"
           data-claim-player=""
           aria-pressed="${claimedBy ? "true" : "false"}"

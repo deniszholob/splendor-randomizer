@@ -132,7 +132,7 @@ function bindEvents() {
     }
 
     const mode = getSelectedMode();
-    elements.countHint.textContent = `max ${getMaxCount(pools, mode)}`;
+    elements.countHint.textContent = "Override";
 
     if (elements.countInput.value === "") {
       return;
@@ -423,7 +423,7 @@ function commitFromControls(manualCount = false) {
 
   elements.countInput.max = String(maxCount);
   elements.countInput.value = String(count);
-  elements.countHint.textContent = `max ${maxCount}`;
+  elements.countHint.textContent = "Override";
 
   if (currentState.mode === mode && currentState.count === count) {
     return;
@@ -722,7 +722,7 @@ function syncCountPreview(players, draft = "") {
   const mode = getSelectedMode();
   const maxCount = getMaxCount(pools, mode);
   elements.countInput.max = String(maxCount);
-  elements.countHint.textContent = `max ${maxCount}`;
+  elements.countHint.textContent = "Override";
 
   if (ui.countOverridden) {
     return;

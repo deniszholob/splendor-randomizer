@@ -16,8 +16,7 @@
   --overlay-scrim: linear-gradient(
     180deg,
     rgba(2, 6, 23, 0.04) 0%,
-    rgba(2, 6, 23, 0.14) 48%,
-    rgba(2, 6, 23, 0.78) 100%
+    rgba(2, 6, 23, 0.1) 100%
   );
   --fallback-surface:
     linear-gradient(
@@ -76,6 +75,11 @@ body {
   aspect-ratio: 1 / 1;
 }
 
+.token-card {
+  transform: scale(0.88);
+  opacity: 0.6;
+}
+
 .city-card {
   aspect-ratio: 400 / 170;
 }
@@ -103,18 +107,23 @@ body {
   filter: saturate(0.88) brightness(0.82);
 }
 
+.noble-image {
+  transform: scale(1.06);
+  filter: brightness(1.08) saturate(1.04);
+}
+
 .card-frame[role="button"] {
   cursor: pointer;
 }
 
 .card-frame[role="button"]:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
+  /* outline-offset: 3px; */
 }
 
 .card-frame.is-selected {
   outline: 2px solid rgba(252, 211, 77, 0.92);
-  outline-offset: 2px;
+  /* outline-offset: 2px; */
 }
 
 .card-scrim {
@@ -198,6 +207,21 @@ body {
   white-space: nowrap;
 }
 
+#count-input:disabled {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.7) 0 10px,
+    rgba(30, 41, 59, 0.76) 10px 20px
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  color: rgba(148, 163, 184, 0.9);
+}
+
+#count-override-input {
+  accent-color: var(--color-accent-strong);
+}
+
 .player-editor {
   position: relative;
   display: flex;
@@ -265,7 +289,9 @@ body {
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 .player-editor-clear:hover {
