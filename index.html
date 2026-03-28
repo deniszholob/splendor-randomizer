@@ -6,18 +6,18 @@
     <meta name="author" content="Denis Zholob" />
     <meta
       name="keywords"
-      content="Splendor, noble cards, nobles, randomizer, board game, Denis Zholob"
+      content="Splendor, nobles, cities, randomizer, board game, shareable url, Denis Zholob"
     />
-    <meta name="title" content="Splendor Noble Grid" />
+    <meta name="title" content="Splendor Randomizer" />
     <meta
       name="description"
-      content="Visual grids of all Splendor noble and city cards, with double nobles on the left, triplets on the right, and color tokens down the center."
+      content="Generate random Splendor nobles or cities, then share the URL so everyone sees the same tiles."
     />
     <meta name="theme-color" content="#020617" />
-    <meta property="og:title" content="Splendor Noble Grid" />
+    <meta property="og:title" content="Splendor Randomizer" />
     <meta
       property="og:description"
-      content="Browse all Splendor noble and city cards in responsive grid layouts."
+      content="Generate random Splendor nobles or cities and share the same selection with a link."
     />
     <meta property="og:type" content="website" />
 
@@ -27,7 +27,7 @@
       href="./assets/tokens/yellow.webp"
     />
     <link rel="stylesheet" href="./styles.css" />
-    <title>Splendor Noble And City Grid</title>
+    <title>Splendor Randomizer</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">
@@ -53,7 +53,6 @@
           @apply relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)];
           width: 100%;
           height: 100%;
-          aspect-ratio: 3 / 4;
         }
 
         .card-scrim {
@@ -88,6 +87,18 @@
 
         .card-frame.is-missing .noble-fallback {
           @apply flex;
+        }
+
+        .mode-option {
+          @apply block cursor-pointer rounded-2xl border border-white/12 bg-white/6 px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition hover:bg-white/10;
+        }
+
+        .mode-option:has(input:checked) {
+          @apply border-amber-300 bg-amber-300 text-slate-950;
+        }
+
+        .noble-art-card .color-chip-stack {
+          @apply hidden;
         }
       }
     </style>

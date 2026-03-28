@@ -11,21 +11,32 @@
   box-sizing: border-box;
 }
 
+.result-board {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .noble-board {
   display: grid;
   gap: 0.5rem;
-  min-height: 0;
-  width: min(100%, calc(100dvh - 12.5rem));
+  width: min(100%, 820px);
   margin-inline: auto;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  aspect-ratio: 1;
+}
+
+.result-board-cities {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .city-board {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.noble-card {
+  aspect-ratio: 1 / 1;
 }
 
 .city-card {
@@ -55,19 +66,13 @@
   word-break: break-word;
 }
 
-@media (min-width: 1024px) {
-  .noble-board {
-    max-height: calc(100dvh - 12.5rem);
-  }
-}
-
-@media (max-width: 1023px) {
-  .noble-board {
-    width: min(100%, calc(100dvh - 10.5rem));
-  }
-}
-
 @media (max-width: 767px) {
+  .result-board,
+  .result-board-cities {
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
   .noble-board {
     gap: 0.35rem;
     width: 100%;
@@ -75,6 +80,6 @@
 
   .city-board {
     gap: 0.5rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
