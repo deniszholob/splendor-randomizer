@@ -56,6 +56,58 @@ let cityPool = [];
 let referenceSectionOpen = false;
 let pendingFocus = null;
 let wakeLockHandle = null;
+let localClaims = {};
+let activeClaimTileId = "";
+const PLAYER_ACCENTS = [
+  {
+    fill: "#f59e0b",
+    soft: "rgba(245, 158, 11, 0.28)",
+    strong: "#fde68a",
+    text: "#111827",
+  },
+  {
+    fill: "#22c55e",
+    soft: "rgba(34, 197, 94, 0.28)",
+    strong: "#bbf7d0",
+    text: "#052e16",
+  },
+  {
+    fill: "#38bdf8",
+    soft: "rgba(56, 189, 248, 0.28)",
+    strong: "#bae6fd",
+    text: "#082f49",
+  },
+  {
+    fill: "#f472b6",
+    soft: "rgba(244, 114, 182, 0.28)",
+    strong: "#fbcfe8",
+    text: "#500724",
+  },
+  {
+    fill: "#a78bfa",
+    soft: "rgba(167, 139, 250, 0.28)",
+    strong: "#ddd6fe",
+    text: "#2e1065",
+  },
+  {
+    fill: "#fb7185",
+    soft: "rgba(251, 113, 133, 0.28)",
+    strong: "#fecdd3",
+    text: "#4c0519",
+  },
+  {
+    fill: "#2dd4bf",
+    soft: "rgba(45, 212, 191, 0.28)",
+    strong: "#99f6e4",
+    text: "#042f2e",
+  },
+  {
+    fill: "#f97316",
+    soft: "rgba(249, 115, 22, 0.28)",
+    strong: "#fed7aa",
+    text: "#431407",
+  },
+];
 
 void init();
 
@@ -171,8 +223,8 @@ function parseHash() {
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
-
-  return { mode, count, ids };
+  const players = normalizePlayers(params.get("players") ?? "");
+  return { mode, count, ids, players };
 }
 
 function sanitizeState(state) {
@@ -182,20 +234,26 @@ function sanitizeState(state) {
     .filter((id) => availableIds.has(id))
     .slice(0, state.count);
 
+  const players = normalizePlayers(state.players ?? []);
+  const claims = sanitizeClaims(localClaims, ids, players);
+  localClaims = claims;
+
   if (ids.length === state.count) {
-    return { ...state, ids };
+    return { ...state, ids, players, claims };
   }
 
-  return generateRandomState(state.mode, state.count);
+  return generateRandomState(state.mode, state.count, players);
 }
 
-function generateRandomState(mode, count) {
+function generateRandomState(mode, count, players = []) {
   const pool = [...getPool(mode)];
   shuffle(pool);
 
   return {
     mode,
     count: clamp(count, 1, getMaxCount(mode)),
+    players: normalizePlayers(players),
+    claims: {},
     ids: pool
       .slice(0, clamp(count, 1, getMaxCount(mode)))
       .map((item) => item.id),
@@ -208,6 +266,9 @@ function commitState(state, replace = false) {
   params.set("mode", normalized.mode);
   params.set("count", String(normalized.count));
   params.set("ids", normalized.ids.join(","));
+  if (normalized.players.length > 0) {
+    params.set("players", normalized.players.join("."));
+  }
   const nextHash = `#${params.toString()}`;
 
   if (replace) {
@@ -225,6 +286,8 @@ function commitState(state, replace = false) {
 }
 
 function renderFromHash() {
+  localClaims = {};
+  activeClaimTileId = "";
   commitState(sanitizeState(parseHash()), true);
 }
 
@@ -238,6 +301,26 @@ function renderState(state) {
   const page = document.createElement("main");
   page.className =
     "mx-auto flex min-h-dvh w-full max-w-[1200px] flex-col px-3 py-4 text-white sm:px-4 lg:px-6";
+  page.addEventListener("click", (event) => {
+    if (!activeClaimTileId) {
+      return;
+    }
+
+    if (event.target.closest("[data-tile-id]")) {
+      return;
+    }
+
+    activeClaimTileId = "";
+    renderState(sanitizeState(parseHash()));
+  });
+  page.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !activeClaimTileId) {
+      return;
+    }
+
+    activeClaimTileId = "";
+    renderState(sanitizeState(parseHash()));
+  });
 
   page.append(
     createHeader(state),
@@ -253,13 +336,29 @@ function renderState(state) {
 
 function createHeader(state) {
   const header = document.createElement("header");
-  header.className = "mb-4 text-center sm:mb-5";
+  header.className = "relative mb-4 text-center sm:mb-5";
   header.innerHTML = `
-    <p class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Splendor Randomizer</p>
+    <a class="inline-block text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300 no-underline transition hover:text-amber-200 focus:outline-none focus-visible:text-amber-100" href="./">Splendor Randomizer</a>
     <p class="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base">
-      Generate a random set of ${state.mode}, then share the URL so everyone sees the exact same tiles.
+      Generate a random set of ${state.mode}, share the URL so everyone sees the same tiles, then mark claimed tiles by player as the game moves.
     </p>
   `;
+
+  const fullscreenButton = document.createElement("button");
+  fullscreenButton.className =
+    "absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white transition hover:bg-white/12 focus:outline-none focus-visible:border-amber-300";
+  fullscreenButton.type = "button";
+  fullscreenButton.setAttribute("aria-label", "Toggle fullscreen");
+  fullscreenButton.innerHTML = `
+    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 fill-none stroke-current stroke-2">
+      <path d="M8 3H4v4"></path>
+      <path d="M16 3h4v4"></path>
+      <path d="M8 21H4v-4"></path>
+      <path d="M16 21h4v-4"></path>
+    </svg>
+  `;
+  fullscreenButton.addEventListener("click", toggleFullscreenMode);
+  header.append(fullscreenButton);
   return header;
 }
 
@@ -333,12 +432,35 @@ function createControls(state) {
       1,
       getMaxCount(selectedMode),
     );
-    commitState(generateRandomState(selectedMode, nextCount));
+    commitState(
+      generateRandomState(selectedMode, nextCount, playersInput.value),
+    );
   });
 
   const modeInputs = [...modeField.querySelectorAll('input[name="mode"]')];
   const countInput = countField.querySelector('input[name="count"]');
   const countHint = countField.querySelector(".count-hint");
+  const playerField = document.createElement("label");
+  playerField.className = "block";
+  playerField.innerHTML = `
+    <span class="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
+      <span>Players</span>
+      <span class="text-[0.7rem] normal-case tracking-normal text-slate-400">comma or space separated</span>
+    </span>
+    <input
+      class="w-full rounded-xl border border-white/12 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
+      type="text"
+      name="players"
+      value="${escapeAttribute(state.players.join(" "))}"
+      placeholder="Bob Alice Jack Jill"
+      autocomplete="off"
+      spellcheck="false"
+    />
+  `;
+  const playersInput = playerField.querySelector('input[name="players"]');
+  const inputsRow = document.createElement("div");
+  inputsRow.className =
+    "grid gap-2 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]";
   const actionRow = document.createElement("div");
   actionRow.className = "grid grid-cols-2 gap-2";
 
@@ -364,7 +486,9 @@ function createControls(state) {
     countInput.max = String(getMaxCount(selectedMode));
     countInput.value = String(nextCount);
     countHint.textContent = `max ${getMaxCount(selectedMode)}`;
-    commitState(generateRandomState(selectedMode, nextCount));
+    commitState(
+      generateRandomState(selectedMode, nextCount, playersInput.value),
+    );
   };
 
   for (const input of modeInputs) {
@@ -396,11 +520,26 @@ function createControls(state) {
     );
     countHint.textContent = `max ${getMaxCount(selectedMode)}`;
     preserveCountFocus();
-    commitState(generateRandomState(selectedMode, nextCount));
+    commitState(
+      generateRandomState(selectedMode, nextCount, playersInput.value),
+    );
   });
 
+  playersInput.addEventListener("change", () => {
+    pendingFocus = {
+      selector: 'input[name="players"]',
+      start: playersInput.selectionStart,
+      end: playersInput.selectionEnd,
+    };
+    commitState({
+      ...state,
+      players: playersInput.value,
+    });
+  });
+
+  inputsRow.append(countField, playerField);
   actionRow.append(rerollButton, shareButton);
-  form.append(modeField, countField, actionRow);
+  form.append(modeField, inputsRow, actionRow);
   section.append(form);
   return section;
 }
@@ -408,28 +547,6 @@ function createControls(state) {
 function createResults(state, selection) {
   const section = document.createElement("section");
   section.className = "flex-1";
-
-  const resultHeader = document.createElement("div");
-  resultHeader.className =
-    "mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between";
-  const headingBlock = document.createElement("div");
-  headingBlock.innerHTML = `
-    <div>
-      <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">Result</p>
-      <h2 class="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">
-        ${selection.length} Random ${state.mode === "cities" ? "Cities" : "Nobles"}
-      </h2>
-    </div>
-  `;
-
-  const fullscreenButton = document.createElement("button");
-  fullscreenButton.className =
-    "self-start rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white/12 sm:self-auto";
-  fullscreenButton.type = "button";
-  fullscreenButton.textContent = "Fullscreen";
-  fullscreenButton.addEventListener("click", toggleFullscreenMode);
-
-  resultHeader.append(headingBlock, fullscreenButton);
 
   const grid = document.createElement("div");
   grid.className =
@@ -440,12 +557,12 @@ function createResults(state, selection) {
   for (const item of selection) {
     grid.append(
       item.kind === "cities"
-        ? createCityCard(item.filename)
-        : createNobleCard(item),
+        ? createCityCard(item.filename, state)
+        : createNobleCard(item, state),
     );
   }
 
-  section.append(resultHeader, grid);
+  section.append(createPlayerSummary(state), grid);
   return section;
 }
 
@@ -542,12 +659,24 @@ function createFooter() {
   return footer;
 }
 
-function createNobleCard(combo) {
+function createNobleCard(combo, state = { players: [], claims: {} }) {
   const badgeText = combo.colors.length === 2 ? "Double" : "Triplet";
   const ariaLabel = `Noble for ${combo.colors.map((color) => COLOR_LABELS[color]).join(", ")}`;
+  const claimedBy = state.claims?.[combo.id] ?? "";
   const card = document.createElement("article");
   card.className = "card-frame noble-card";
   card.setAttribute("aria-label", ariaLabel);
+  card.dataset.tileId = combo.id;
+  if (state.players.length > 0) {
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+  }
+  if (claimedBy) {
+    card.classList.add("is-claimed");
+  }
+  if (activeClaimTileId === combo.id) {
+    card.classList.add("is-claiming");
+  }
 
   const fallback = createFallbackContent(
     combo.colors.map((color) => COLOR_LABELS[color]).join(" / "),
@@ -572,17 +701,33 @@ function createNobleCard(combo) {
     image,
     scrim,
     createBadge(badgeText),
+    createClaimBadge(claimedBy, state),
     createChipRow(combo.colors),
+    createClaimPanel(combo.id, state),
   );
+  attachClaimTrigger(card, combo.id, state);
   card.classList.add("noble-art-card");
   return card;
 }
 
-function createCityCard(filename) {
+function createCityCard(filename, state = { players: [], claims: {} }) {
   const title = filename.replace(".webp", "").replaceAll("-", " ");
+  const cityId = filename.replace(".webp", "");
+  const claimedBy = state.claims?.[cityId] ?? "";
   const card = document.createElement("article");
   card.className = "card-frame city-card";
   card.setAttribute("aria-label", title);
+  card.dataset.tileId = cityId;
+  if (state.players.length > 0) {
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+  }
+  if (claimedBy) {
+    card.classList.add("is-claimed");
+  }
+  if (activeClaimTileId === cityId) {
+    card.classList.add("is-claiming");
+  }
 
   const fallback = createFallbackContent(title, filename, "City image missing");
 
@@ -600,7 +745,15 @@ function createCityCard(filename) {
     image.remove();
   });
 
-  card.append(fallback, image, scrim, createLeftBadge("City"));
+  card.append(
+    fallback,
+    image,
+    scrim,
+    createLeftBadge("City"),
+    createClaimBadge(claimedBy, state),
+    createClaimPanel(cityId, state),
+  );
+  attachClaimTrigger(card, cityId, state);
   return card;
 }
 
@@ -669,6 +822,116 @@ function createChipRow(colors) {
   }
 
   return row;
+}
+
+function createClaimBadge(claimedBy, state) {
+  const badge = document.createElement("span");
+  badge.className =
+    "claim-badge absolute left-2 bottom-2 z-30 hidden max-w-[70%] rounded-full border px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.16em] shadow-lg sm:left-3 sm:bottom-3 sm:text-[0.68rem]";
+
+  if (!claimedBy) {
+    return badge;
+  }
+
+  badge.textContent = claimedBy;
+  applyAccentStyle(badge, getPlayerAccent(claimedBy, state.players));
+  badge.classList.remove("hidden");
+  return badge;
+}
+
+function createClaimPanel(tileId, state) {
+  const panel = document.createElement("div");
+  panel.className = "claim-panel absolute inset-0 z-40 hidden p-2 sm:p-3";
+
+  if (!Array.isArray(state.players) || state.players.length === 0) {
+    panel.classList.add("hidden");
+    return panel;
+  }
+
+  if (activeClaimTileId !== tileId) {
+    return panel;
+  }
+
+  panel.classList.remove("hidden");
+
+  const overlay = document.createElement("div");
+  overlay.className =
+    "claim-overlay absolute inset-0 rounded-[1.2rem] border border-white/18 bg-slate-950/88 backdrop-blur-sm";
+  panel.append(overlay);
+
+  const picker = document.createElement("div");
+  picker.className = "claim-picker relative z-10 grid h-full w-full gap-2";
+  picker.style.gridTemplateColumns = buildClaimGridTemplate(
+    state.players.length + 1,
+  );
+  picker.style.gridAutoRows = "minmax(0, 1fr)";
+
+  const currentClaim = state.claims?.[tileId] ?? "";
+  const clearButton = document.createElement("button");
+  clearButton.type = "button";
+  clearButton.className = currentClaim
+    ? "claim-pill claim-pill-clear"
+    : "claim-pill claim-pill-clear is-active";
+  clearButton.textContent = "Open";
+  clearButton.setAttribute("aria-pressed", currentClaim ? "false" : "true");
+  clearButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    commitClaim(tileId, "");
+  });
+  picker.append(clearButton);
+
+  for (const player of state.players) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className =
+      currentClaim === player ? "claim-pill is-active" : "claim-pill";
+    button.textContent = player;
+    applyAccentStyle(
+      button,
+      getPlayerAccent(player, state.players),
+      currentClaim === player,
+    );
+    button.setAttribute(
+      "aria-pressed",
+      currentClaim === player ? "true" : "false",
+    );
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      commitClaim(tileId, currentClaim === player ? "" : player);
+    });
+    picker.append(button);
+  }
+
+  panel.append(picker);
+  return panel;
+}
+
+function createPlayerSummary(state) {
+  const panel = document.createElement("section");
+  panel.className =
+    "mb-4 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-slate-950/35 p-2.5";
+
+  if (!state.players.length) {
+    panel.classList.add("hidden");
+    return panel;
+  }
+
+  const counts = new Map(state.players.map((player) => [player, 0]));
+  for (const claimedBy of Object.values(state.claims ?? {})) {
+    counts.set(claimedBy, (counts.get(claimedBy) ?? 0) + 1);
+  }
+
+  for (const player of state.players) {
+    const pill = document.createElement("div");
+    pill.className = "rounded-full border px-3 py-1.5 text-sm font-bold";
+    applyAccentStyle(pill, getPlayerAccent(player, state.players));
+    const claimedCount = counts.get(player) ?? 0;
+    pill.textContent =
+      `${player} ${claimedCount > 0 ? `(${claimedCount})` : ""}`.trim();
+    panel.append(pill);
+  }
+
+  return panel;
 }
 
 function createFallbackContent(title, filename, message) {
@@ -767,6 +1030,123 @@ async function shareCurrentSelection() {
   }
 
   window.prompt("Copy this URL", shareUrl);
+}
+
+function normalizePlayers(value) {
+  const source = Array.isArray(value)
+    ? value
+    : String(value)
+        .trim()
+        .split(/[,\s.~]+/);
+  const seen = new Set();
+  const players = [];
+
+  for (const item of source) {
+    const player = String(item).trim().replace(/\s+/g, " ");
+    const key = player.toLocaleLowerCase();
+    if (!player || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    players.push(player);
+  }
+
+  return players.slice(0, 8);
+}
+
+function sanitizeClaims(claims, ids, players) {
+  const validIds = new Set(ids);
+  const validPlayers = new Set(players);
+  const nextClaims = {};
+
+  for (const [tileId, player] of Object.entries(claims)) {
+    if (!validIds.has(tileId) || !validPlayers.has(player)) {
+      continue;
+    }
+
+    nextClaims[tileId] = player;
+  }
+
+  return nextClaims;
+}
+
+function commitClaim(tileId, player) {
+  const nextState = sanitizeState(parseHash());
+  const nextClaims = { ...localClaims };
+
+  if (!player) {
+    delete nextClaims[tileId];
+  } else {
+    nextClaims[tileId] = player;
+  }
+
+  localClaims = sanitizeClaims(nextClaims, nextState.ids, nextState.players);
+  activeClaimTileId = "";
+  renderState({
+    ...nextState,
+    claims: localClaims,
+  });
+}
+
+function attachClaimTrigger(card, tileId, state) {
+  if (!state.players.length) {
+    return;
+  }
+
+  card.addEventListener("click", (event) => {
+    if (event.target.closest(".claim-pill")) {
+      return;
+    }
+
+    activeClaimTileId = activeClaimTileId === tileId ? "" : tileId;
+    renderState(sanitizeState(parseHash()));
+  });
+
+  card.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    activeClaimTileId = activeClaimTileId === tileId ? "" : tileId;
+    renderState(sanitizeState(parseHash()));
+  });
+}
+
+function getPlayerAccent(player, players = []) {
+  const index = players.findIndex((entry) => entry === player);
+  return PLAYER_ACCENTS[index === -1 ? 0 : index % PLAYER_ACCENTS.length];
+}
+
+function applyAccentStyle(element, accent, isActive = true) {
+  if (!accent) {
+    return;
+  }
+
+  if (isActive) {
+    element.style.background = accent.fill;
+    element.style.borderColor = accent.strong;
+    element.style.color = accent.text;
+    return;
+  }
+
+  element.style.background = accent.soft;
+  element.style.borderColor = accent.strong;
+  element.style.color = "white";
+}
+
+function buildClaimGridTemplate(optionCount) {
+  const columns = Math.min(3, Math.max(2, Math.ceil(Math.sqrt(optionCount))));
+  return `repeat(${columns}, minmax(0, 1fr))`;
+}
+
+function escapeAttribute(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
 function clamp(value, min, max) {

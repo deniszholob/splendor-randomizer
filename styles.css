@@ -66,6 +66,66 @@
   word-break: break-word;
 }
 
+.card-frame.is-claimed img {
+  filter: saturate(0.78) brightness(0.72);
+}
+
+.card-frame[role="button"] {
+  cursor: pointer;
+}
+
+.card-frame[role="button"]:focus-visible {
+  outline: 2px solid rgba(252, 211, 77, 0.95);
+  outline-offset: 3px;
+}
+
+.card-frame.is-claiming img,
+.card-frame.is-claiming .card-scrim,
+.card-frame.is-claiming .badge-pill,
+.card-frame.is-claiming .claim-badge,
+.card-frame.is-claiming .color-chip-stack {
+  opacity: 0.14;
+}
+
+.claim-pill {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(15, 23, 42, 0.88);
+  color: white;
+  border-radius: 999px;
+  padding: 0.38rem 0.72rem;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.claim-pill.is-active {
+  background: rgba(251, 191, 36, 0.96);
+  border-color: rgba(253, 224, 71, 0.95);
+  color: rgb(15, 23, 42);
+}
+
+.claim-pill-clear {
+  background: rgba(2, 6, 23, 0.72);
+}
+
+.claim-picker {
+  align-content: stretch;
+  justify-content: stretch;
+}
+
+.claim-picker > * {
+  min-height: 0;
+}
+
 @media (max-width: 767px) {
   .result-board {
     gap: 0.5rem;
@@ -89,6 +149,19 @@
   .noble-board > .card-frame > .absolute.right-2.top-2.z-20,
   .noble-board > .card-frame > .absolute.left-2.top-2.z-20 {
     display: none;
+  }
+
+  .claim-pill {
+    padding: 0.34rem 0.58rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+  }
+
+  .claim-badge {
+    top: 0.45rem;
+    left: 0.45rem;
+    bottom: auto;
+    max-width: calc(100% - 0.9rem);
   }
 
   .city-board {
