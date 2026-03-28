@@ -8,21 +8,21 @@ const COLOR_LABELS = {
   black: "Black",
 };
 const CITY_IMAGES = new Set([
-  "city-11.webp",
-  "city-12.webp",
-  "city-13.webp",
-  "city-21.webp",
-  "city-22.webp",
-  "city-23.webp",
-  "city-31.webp",
-  "city-32.webp",
-  "city-33.webp",
-  "city-41.webp",
-  "city-42.webp",
-  "city-43.webp",
-  "city-51.webp",
-  "city-52.webp",
-  "city-53.webp",
+  "city-11+4-blue.webp", //1-11
+  "city-11+4-green.webp", //2-12
+  "city-12+1.webp", //3-13
+  "city-13+2-black-green.webp", //8-32
+  "city-13+2-blue-white.webp", //7-31
+  "city-13+2-green-blue.webp", //5-22
+  "city-13+2-red-black.webp", //4-21
+  "city-13+2-white-red.webp", //6-23
+  "city-13+5.webp", //9-33
+  "city-14+2.webp", //11-42
+  "city-14+5.webp", //10-41
+  "city-15+1.webp", //12-43
+  "city-16+5.webp", //13-51
+  "city-17.webp", //14-52
+  "city-28-x.webp", //15-53
 ]);
 const EXISTING_NOBLE_IMAGES = new Set([
   "black-blue-green.webp",
