@@ -110,8 +110,12 @@ export function sanitizeState(pools, state, localClaims = {}) {
   // selection, player list, and claim assignments are internally consistent.
   const pool = getPool(pools, state.mode);
   const availableIds = new Set(pool.map((item) => item.id));
-  const ids = [...new Set(state.ids)]
-    .filter((id) => availableIds.has(id))
+  const ids = sortTileIds(
+    pools,
+    state.mode,
+    [...new Set(state.ids)]
+      .filter((id) => availableIds.has(id)),
+  )
     .slice(0, state.count);
   const players = normalizePlayers(state.players ?? []);
   const claims = sanitizeClaims(localClaims, ids, players);
@@ -143,7 +147,11 @@ export function generateRandomState(
     count: nextCount,
     players: normalizePlayers(players),
     claims,
-    ids: pool.slice(0, nextCount).map((item) => item.id),
+    ids: sortTileIds(
+      pools,
+      mode,
+      pool.slice(0, nextCount).map((item) => item.id),
+    ),
   };
 }
 
@@ -183,4 +191,16 @@ function escapeRegExp(value) {
 function encodeTileId(pools, mode, id) {
   const codeLookup = mode === "cities" ? pools.cityCodeById : pools.nobleCodeById;
   return codeLookup.get(id) ?? "";
+}
+
+function sortTileIds(pools, mode, ids) {
+  return [...ids].sort((left, right) => {
+    return getTileCodeNumber(pools, mode, left) - getTileCodeNumber(pools, mode, right);
+  });
+}
+
+function getTileCodeNumber(pools, mode, id) {
+  const code = encodeTileId(pools, mode, id);
+  const number = Number.parseInt(code, 10);
+  return Number.isFinite(number) ? number : Number.POSITIVE_INFINITY;
 }
