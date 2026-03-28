@@ -105,6 +105,21 @@ function bindEvents() {
   });
 
   elements.countInput.addEventListener("input", () => {
+    const mode = getSelectedMode();
+    elements.countHint.textContent = `max ${getMaxCount(pools, mode)}`;
+
+    if (elements.countInput.value === "") {
+      return;
+    }
+
+    commitFromControls();
+  });
+
+  elements.countInput.addEventListener("blur", () => {
+    commitFromControls();
+  });
+
+  elements.countInput.addEventListener("change", () => {
     commitFromControls();
   });
 
@@ -337,11 +352,17 @@ function commitPlayers() {
 function commitFromControls() {
   const mode = getSelectedMode();
   const maxCount = getMaxCount(pools, mode);
-  const count = clamp(Number.parseInt(elements.countInput.value, 10) || 1, 1, maxCount);
+  const rawCount = Number.parseInt(elements.countInput.value, 10);
+  const count = clamp(Number.isFinite(rawCount) ? rawCount : 1, 1, maxCount);
+  const currentState = getCurrentState();
 
   elements.countInput.max = String(maxCount);
   elements.countInput.value = String(count);
   elements.countHint.textContent = `max ${maxCount}`;
+
+  if (currentState.mode === mode && currentState.count === count) {
+    return;
+  }
 
   commitState(
     generateRandomState(pools, mode, count, elements.playersInput.value),

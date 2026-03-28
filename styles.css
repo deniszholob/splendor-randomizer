@@ -190,6 +190,14 @@ body {
   background: rgba(2, 6, 23, 0.52);
 }
 
+.claim-badge,
+.name-badge {
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .player-editor {
   position: relative;
   display: flex;

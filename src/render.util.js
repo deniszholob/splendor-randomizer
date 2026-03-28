@@ -78,8 +78,19 @@ function syncControls(elements, pools, state, nobleReferenceView) {
   elements.countInput.max = String(maxCount);
   elements.countInput.value = String(state.count);
   elements.countHint.textContent = `max ${maxCount}`;
-  elements.nobleViewSwitcher.hidden = !DEV_MODE;
-  elements.nobleViewSwitcher.classList.toggle("hidden", !DEV_MODE);
+
+  if (!DEV_MODE) {
+    elements.nobleViewSwitcher.hidden = true;
+    elements.nobleViewSwitcher.setAttribute("aria-hidden", "true");
+    elements.nobleViewSwitcher.classList.add("hidden");
+    elements.nobleViewSwitcher.style.display = "none";
+    return;
+  }
+
+  elements.nobleViewSwitcher.hidden = false;
+  elements.nobleViewSwitcher.setAttribute("aria-hidden", "false");
+  elements.nobleViewSwitcher.classList.remove("hidden");
+  elements.nobleViewSwitcher.style.display = "grid";
   elements.nobleViewButtons.forEach((button) => {
     const isActive = button.value === nobleReferenceView;
     button.setAttribute("aria-pressed", String(isActive));
@@ -366,7 +377,7 @@ function renderClaimBadge(claimedBy, players) {
 
   return `
     <span
-      class="claim-badge absolute bottom-1/2 left-1/2 z-30 w-max max-w-[84%] -translate-x-1/2 translate-y-1/2 rounded-md border px-3.5 py-2 text-[0.8rem] font-extrabold tracking-[0.04em] shadow-lg sm:text-[0.86rem]"
+      class="claim-badge absolute bottom-1/2 left-1/2 z-30 w-[84%] -translate-x-1/2 translate-y-1/2 rounded-md border px-3.5 py-2 text-[0.8rem] font-extrabold tracking-[0.04em] shadow-lg sm:text-[0.86rem]"
       style="${accentStyle(getPlayerAccent(claimedBy, players))}"
     >
       ${escapeHtml(claimedBy)}
