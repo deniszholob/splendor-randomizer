@@ -36,10 +36,8 @@ export function buildNoblePool() {
 export function buildCityPool() {
   return CITY_IMAGES.map((filename) => ({
     kind: "cities",
-    id: filename.replace(".webp", ""),
     filename,
     image: `assets/cities/${filename}`,
-    title: filename.replace(".webp", "").replaceAll("-", " "),
   }))
     .sort((left, right) => {
       const leftPosition = getCityPosition(left.filename);
@@ -57,7 +55,9 @@ export function buildCityPool() {
     })
     .map((city, index) => ({
       ...city,
+      id: `c${index + 1}`,
       number: index + 1,
+      title: `City ${index + 1}`,
     }));
 }
 

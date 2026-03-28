@@ -1,4 +1,16 @@
 export const GITHUB_LINK = "https://github.com/deniszholob/splendor-randomizer";
+export const DEV_MODE = false;
+export const URL_TILE_DELIMITER = ".";
+export const DEV_RELOAD_TARGETS = [
+  "./index.html",
+  "./styles.css",
+  "./src/main.js",
+  "./src/constants.data.js",
+  "./src/render.util.js",
+  "./src/shared.util.js",
+  "./src/state.util.js",
+  "./src/tiles.util.js",
+];
 
 export const COLORS = ["white", "red", "green", "blue", "black"];
 
@@ -78,51 +90,51 @@ export const EXISTING_NOBLE_IMAGES = new Set([
 
 export const PLAYER_ACCENTS = [
   {
-    fill: "#f59e0b",
-    soft: "rgba(245, 158, 11, 0.28)",
-    strong: "#fde68a",
-    text: "#111827",
+    fill: "rgba(180, 138, 61, 0.78)",
+    soft: "rgba(180, 138, 61, 0.6)",
+    strong: "rgba(226, 196, 132, 0.42)",
+    text: "#f8f3df",
   },
   {
-    fill: "#22c55e",
-    soft: "rgba(34, 197, 94, 0.28)",
-    strong: "#bbf7d0",
-    text: "#052e16",
+    fill: "rgba(74, 112, 87, 0.78)",
+    soft: "rgba(74, 112, 87, 0.6)",
+    strong: "rgba(134, 171, 146, 0.4)",
+    text: "#edf5ec",
   },
   {
-    fill: "#38bdf8",
-    soft: "rgba(56, 189, 248, 0.28)",
-    strong: "#bae6fd",
-    text: "#082f49",
+    fill: "rgba(72, 102, 132, 0.78)",
+    soft: "rgba(72, 102, 132, 0.6)",
+    strong: "rgba(129, 163, 191, 0.4)",
+    text: "#edf4fb",
   },
   {
-    fill: "#f472b6",
-    soft: "rgba(244, 114, 182, 0.28)",
-    strong: "#fbcfe8",
-    text: "#500724",
+    fill: "rgba(123, 79, 71, 0.78)",
+    soft: "rgba(123, 79, 71, 0.6)",
+    strong: "rgba(183, 138, 126, 0.4)",
+    text: "#f8efea",
   },
   {
-    fill: "#a78bfa",
-    soft: "rgba(167, 139, 250, 0.28)",
-    strong: "#ddd6fe",
-    text: "#2e1065",
+    fill: "rgba(111, 95, 72, 0.78)",
+    soft: "rgba(111, 95, 72, 0.6)",
+    strong: "rgba(171, 151, 119, 0.38)",
+    text: "#f5f0e6",
   },
   {
-    fill: "#fb7185",
-    soft: "rgba(251, 113, 133, 0.28)",
-    strong: "#fecdd3",
-    text: "#4c0519",
+    fill: "rgba(126, 64, 57, 0.78)",
+    soft: "rgba(126, 64, 57, 0.6)",
+    strong: "rgba(185, 116, 106, 0.38)",
+    text: "#fbefed",
   },
   {
-    fill: "#2dd4bf",
-    soft: "rgba(45, 212, 191, 0.28)",
-    strong: "#99f6e4",
-    text: "#042f2e",
+    fill: "rgba(55, 98, 97, 0.78)",
+    soft: "rgba(55, 98, 97, 0.6)",
+    strong: "rgba(110, 155, 153, 0.38)",
+    text: "#ecf7f6",
   },
   {
-    fill: "#f97316",
-    soft: "rgba(249, 115, 22, 0.28)",
-    strong: "#fed7aa",
-    text: "#431407",
+    fill: "rgba(142, 97, 53, 0.78)",
+    soft: "rgba(142, 97, 53, 0.6)",
+    strong: "rgba(197, 155, 115, 0.38)",
+    text: "#fbf3ea",
   },
 ];

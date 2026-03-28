@@ -1,9 +1,12 @@
 import { buildCityPool, buildNoblePool } from "./tiles.util.js";
 import { createRenderer } from "./render.util.js";
+import { DEV_MODE, DEV_RELOAD_TARGETS, PLAYER_ACCENTS } from "./constants.data.js";
 import {
   createPools,
   generateRandomState,
+  formatPlayerDraft,
   getMaxCount,
+  getPool,
   getSelection,
   normalizePlayers,
   parseHash,
@@ -11,7 +14,7 @@ import {
   sanitizeState,
   serializeState,
 } from "./state.util.js";
-import { clamp } from "./shared.util.js";
+import { clamp, escapeHtml } from "./shared.util.js";
 
 const elements = getElements();
 const renderer = createRenderer(elements);
@@ -19,10 +22,13 @@ const renderer = createRenderer(elements);
 const ui = {
   activeClaimTileId: "",
   localClaims: {},
+  nobleReferenceView: "picture",
+  playerDraft: "",
   wakeLockHandle: null,
 };
 
 let pools = null;
+let devReloadTimer = 0;
 
 void init();
 
@@ -31,7 +37,7 @@ async function init() {
     pools = createPools(buildNoblePool(), buildCityPool());
 
     bindEvents();
-    renderer.renderReference(pools);
+    startDevAutoReload();
     renderer.showApp();
 
     if (!window.location.hash) {
@@ -58,15 +64,43 @@ function bindEvents() {
 
     if (target.matches('input[name="mode"]')) {
       commitFromControls();
+    }
+  });
+
+  elements.playersEditor.addEventListener("click", () => {
+    elements.playersEditorInput.focus();
+  });
+
+  elements.playersEditorInput.addEventListener("input", () => {
+    handlePlayerDraftInput();
+  });
+
+  elements.playersEditorInput.addEventListener("blur", () => {
+    commitPlayers();
+  });
+
+  elements.playersClearButton.addEventListener("click", () => {
+    ui.playerDraft = "";
+    syncPlayerEditor("", "", false);
+    commitPlayers();
+    elements.playersEditorInput.focus();
+  });
+
+  elements.playersEditorInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitPlayers();
       return;
     }
 
-    if (target.matches('input[name="players"]')) {
-      const currentState = getCurrentState();
-      commitState({
-        ...currentState,
-        players: elements.playersInput.value,
-      });
+    if (event.key === "Backspace" && !elements.playersEditorInput.value) {
+      const players = normalizePlayers(elements.playersInput.value);
+      if (!players.length) {
+        return;
+      }
+
+      players.pop();
+      syncPlayerEditor(players.join(" "), "", true);
     }
   });
 
@@ -125,6 +159,54 @@ function bindEvents() {
     renderCurrentState();
   });
 
+  [elements.nobleReference, elements.cityReference].forEach((grid) => {
+    grid.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const tile = target.closest("[data-reference-tile-id]");
+      if (!tile) {
+        return;
+      }
+
+      toggleReferenceTile(
+        tile.getAttribute("data-reference-mode") ?? "nobles",
+        tile.getAttribute("data-reference-tile-id") ?? "",
+      );
+    });
+
+    grid.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      const tile = target.closest("[data-reference-tile-id]");
+      if (!tile) {
+        return;
+      }
+
+      event.preventDefault();
+      toggleReferenceTile(
+        tile.getAttribute("data-reference-mode") ?? "nobles",
+        tile.getAttribute("data-reference-tile-id") ?? "",
+      );
+    });
+  });
+
+  elements.nobleViewButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      ui.nobleReferenceView = button.value === "labeled" ? "labeled" : "picture";
+      renderCurrentState();
+    });
+  });
+
   elements.resultsSection.addEventListener("keydown", (event) => {
     const target = event.target;
     if (!(target instanceof Element)) {
@@ -178,6 +260,80 @@ function bindEvents() {
   });
 }
 
+function startDevAutoReload() {
+  if (!DEV_MODE || devReloadTimer || !window.isSecureContext) {
+    return;
+  }
+
+  const signatures = new Map();
+
+  void primeTargets();
+  devReloadTimer = window.setInterval(() => {
+    void checkTargets();
+  }, 1200);
+
+  async function primeTargets() {
+    for (const target of DEV_RELOAD_TARGETS) {
+      const signature = await fetchAssetSignature(target);
+      if (signature) {
+        signatures.set(target, signature);
+      }
+    }
+  }
+
+  async function checkTargets() {
+    for (const target of DEV_RELOAD_TARGETS) {
+      const nextSignature = await fetchAssetSignature(target);
+      if (!nextSignature) {
+        continue;
+      }
+
+      const previousSignature = signatures.get(target);
+      if (previousSignature && previousSignature !== nextSignature) {
+        window.location.reload();
+        return;
+      }
+
+      signatures.set(target, nextSignature);
+    }
+  }
+}
+
+async function fetchAssetSignature(target) {
+  try {
+    const response = await fetch(`${target}?dev-check=${Date.now()}`, {
+      cache: "no-store",
+      method: "HEAD",
+    });
+
+    if (!response.ok) {
+      return "";
+    }
+
+    return [
+      response.headers.get("etag") ?? "",
+      response.headers.get("last-modified") ?? "",
+      response.headers.get("content-length") ?? "",
+    ].join("|");
+  } catch (_error) {
+    return "";
+  }
+}
+
+function commitPlayers() {
+  const nextPlayers = normalizePlayers([
+    ...normalizePlayers(elements.playersInput.value),
+    ...normalizePlayers(ui.playerDraft),
+  ]).join(" ");
+  syncPlayerEditor(nextPlayers, "", false);
+
+  const currentState = getCurrentState();
+  commitState({
+    ...currentState,
+    players: nextPlayers,
+  });
+}
+
 function commitFromControls() {
   const mode = getSelectedMode();
   const maxCount = getMaxCount(pools, mode);
@@ -190,6 +346,31 @@ function commitFromControls() {
   commitState(
     generateRandomState(pools, mode, count, elements.playersInput.value),
   );
+}
+
+function toggleReferenceTile(mode, tileId) {
+  const currentState = getCurrentState();
+  const nextMode = mode === "cities" ? "cities" : "nobles";
+  const currentIds =
+    currentState.mode === nextMode ? [...currentState.ids] : [];
+  const existingIndex = currentIds.indexOf(tileId);
+
+  if (existingIndex === -1) {
+    currentIds.push(tileId);
+  } else if (currentIds.length > 1) {
+    currentIds.splice(existingIndex, 1);
+  }
+
+  const validIds = new Set(getPool(pools, nextMode).map((item) => item.id));
+  const ids = currentIds.filter((id) => validIds.has(id));
+
+  commitState({
+    ...currentState,
+    mode: nextMode,
+    count: ids.length,
+    ids,
+    claims: {},
+  });
 }
 
 function commitState(state, replace = false) {
@@ -218,6 +399,7 @@ function renderFromHash() {
   // state change resets local claim state and any open claim picker.
   ui.localClaims = {};
   ui.activeClaimTileId = "";
+  ui.playerDraft = "";
   const nextState = sanitizeState(
     pools,
     parseHash(window.location.hash, pools),
@@ -236,9 +418,11 @@ function renderCurrentState() {
 }
 
 function renderState(state) {
+  syncPlayerEditor(state.players.join(" "), ui.playerDraft, false);
   renderer.renderApp({
     pools,
     activeClaimTileId: ui.activeClaimTileId,
+    nobleReferenceView: ui.nobleReferenceView,
     state: {
       ...state,
       selection: getSelection(pools, state),
@@ -357,7 +541,12 @@ function getElements() {
     modeDescription: document.getElementById("mode-description"),
     modeInputs: [...document.querySelectorAll('input[name="mode"]')],
     nobleReference: document.getElementById("noble-reference-grid"),
-    playerSummary: document.getElementById("player-summary"),
+    nobleViewButtons: [...document.querySelectorAll("[data-noble-view]")],
+    nobleViewSwitcher: document.getElementById("noble-view-switcher"),
+    playersEditor: document.getElementById("players-editor"),
+    playersClearButton: document.getElementById("players-clear-button"),
+    playersEditorInput: document.getElementById("players-editor-input"),
+    playersEditorList: document.getElementById("players-editor-list"),
     playersInput: document.getElementById("players-input"),
     rerollButton: document.getElementById("reroll-button"),
     results: document.getElementById("results-grid"),
@@ -365,4 +554,56 @@ function getElements() {
     shareButton: document.getElementById("share-button"),
     sourceLink: document.getElementById("source-link"),
   };
+}
+
+function handlePlayerDraftInput() {
+  const rawDraft = formatPlayerDraft(elements.playersEditorInput.value);
+  const hasTrailingSeparator = /[,\s.~]+$/.test(rawDraft);
+  const parts = rawDraft.split(/[,\s.~]+/).filter(Boolean);
+  const committedPlayers = hasTrailingSeparator ? parts : parts.slice(0, -1);
+  const draftPlayer = hasTrailingSeparator ? "" : (parts.at(-1) ?? "");
+  const nextPlayers = normalizePlayers([
+    ...normalizePlayers(elements.playersInput.value),
+    ...committedPlayers,
+  ]).join(" ");
+
+  syncPlayerEditor(nextPlayers, draftPlayer, committedPlayers.length > 0);
+}
+
+function syncPlayerEditor(value, draft = "", commitStateImmediately = false) {
+  const players = normalizePlayers(value);
+  ui.playerDraft = formatPlayerDraft(draft).replace(/[,\s.~]+/g, "");
+  elements.playersInput.value = value;
+  elements.playersEditorList.innerHTML = renderPlayerEditorMarkup(players);
+  elements.playersEditorInput.value = ui.playerDraft;
+  elements.playersEditor.classList.toggle("has-values", players.length > 0);
+  elements.playersClearButton.classList.toggle(
+    "hidden",
+    players.length === 0 && !ui.playerDraft,
+  );
+
+  if (commitStateImmediately) {
+    const currentState = getCurrentState();
+    commitState({
+      ...currentState,
+      players: players.join(" "),
+    });
+  }
+}
+
+function renderPlayerEditorMarkup(players) {
+  return players.map((player, index) => renderPlayerToken(player, index)).join("");
+}
+
+function renderPlayerToken(player, index) {
+  const accent = PLAYER_ACCENTS[index % PLAYER_ACCENTS.length];
+  return `
+    <span
+      class="player-editor-token"
+      style="background:${accent.soft};border-color:${accent.strong};color:${accent.text};"
+      contenteditable="false"
+    >
+      ${escapeHtml(player)}
+    </span>
+  `;
 }

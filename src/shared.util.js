@@ -36,3 +36,11 @@ export function getPermutations(items) {
 
   return permutations;
 }
+
+export function toTitleCaseWord(value) {
+  const lowerCased = String(value).toLocaleLowerCase();
+
+  return lowerCased.replace(/(^[a-z])|([-'][a-z])/g, (match) =>
+    match.toLocaleUpperCase(),
+  );
+}

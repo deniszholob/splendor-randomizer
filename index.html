@@ -40,18 +40,17 @@
       class="mx-auto flex min-h-dvh w-full max-w-[1200px] flex-col px-3 py-4 text-white sm:px-4 lg:px-6"
     >
       <header class="relative mb-4 text-center sm:mb-5">
-        <a
-          class="inline-block text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300 no-underline transition hover:text-amber-200 focus:outline-none focus-visible:text-amber-100"
-          href="./"
-        >
-          Splendor Randomizer
-        </a>
-        <p
-          id="mode-description"
-          class="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base"
-        >
-          Generate a random set of nobles, share the URL so everyone sees the same
-          tiles, then mark claimed tiles by player as the game moves.
+        <h1>
+          <a
+            class="inline-block text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300 no-underline transition hover:text-amber-200 focus:outline-none focus-visible:text-amber-100"
+            href="./"
+          >
+            Splendor Randomizer
+          </a>
+        </h1>
+        <p id="mode-description" class="mx-auto mt-2 max-w-3xl text-sm text-slate-300 sm:text-base">
+          Generate a random set of nobles, share the URL so everyone sees the same tiles, then mark
+          claimed tiles by player as the game moves.
         </p>
         <button
           id="fullscreen-button"
@@ -77,20 +76,18 @@
       >
         <form id="controls-form" class="flex flex-col gap-2">
           <fieldset class="space-y-3">
-            <legend
-              class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-300"
-            >
+            <legend class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
               Tile Type
             </legend>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-2 rounded-lg bg-white/5 p-1">
               <label
-                class="block cursor-pointer rounded-2xl border border-white/12 bg-white/6 px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition has-[:checked]:border-amber-300 has-[:checked]:bg-amber-300 has-[:checked]:text-slate-950 hover:bg-white/10"
+                class="block cursor-pointer rounded-md px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition has-[:checked]:bg-amber-100/14 has-[:checked]:text-amber-100 hover:bg-white/8"
               >
                 <input class="sr-only" type="radio" name="mode" value="nobles" checked />
                 <span>Nobles</span>
               </label>
               <label
-                class="block cursor-pointer rounded-2xl border border-white/12 bg-white/6 px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition has-[:checked]:border-amber-300 has-[:checked]:bg-amber-300 has-[:checked]:text-slate-950 hover:bg-white/10"
+                class="block cursor-pointer rounded-md px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition has-[:checked]:bg-amber-100/14 has-[:checked]:text-amber-100 hover:bg-white/8"
               >
                 <input class="sr-only" type="radio" name="mode" value="cities" />
                 <span>Cities</span>
@@ -113,7 +110,7 @@
               </span>
               <input
                 id="count-input"
-                class="w-full rounded-xl border border-white/12 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
+                class="w-full rounded-lg border border-white/10 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
                 type="number"
                 name="count"
                 min="1"
@@ -132,29 +129,44 @@
                   comma or space separated
                 </span>
               </span>
-              <input
-                id="players-input"
-                class="w-full rounded-xl border border-white/12 bg-slate-900/90 px-3 py-2 text-sm font-bold text-white outline-none transition placeholder:text-slate-500 focus:border-amber-300"
-                type="text"
-                name="players"
-                placeholder="Bob Alice Jack Jill"
-                autocomplete="off"
-                spellcheck="false"
-              />
+              <input id="players-input" type="hidden" name="players" value="" />
+              <div
+                id="players-editor"
+                class="player-editor min-h-[38px] w-full rounded-lg border border-white/10 bg-slate-900/90 px-3 py-1 text-sm text-white outline-none transition focus-within:border-amber-300"
+              >
+                <div id="players-editor-list" class="player-editor-list"></div>
+                <input
+                  id="players-editor-input"
+                  class="player-editor-input"
+                  type="text"
+                  aria-label="Players"
+                  placeholder="Bob Alice Jack Jill"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button
+                  id="players-clear-button"
+                  class="player-editor-clear hidden"
+                  type="button"
+                  aria-label="Clear players"
+                >
+                  ×
+                </button>
+              </div>
             </label>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <button
               id="reroll-button"
-              class="rounded-xl bg-amber-300 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-amber-200"
+              class="rounded-lg bg-amber-300 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-amber-200"
               type="button"
             >
               Reroll
             </button>
             <button
               id="share-button"
-              class="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white/12"
+              class="rounded-lg border border-white/10 bg-white/8 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white/12"
               type="button"
             >
               Share
@@ -164,11 +176,6 @@
       </section>
 
       <section id="results-section" class="flex-1">
-        <section
-          id="player-summary"
-          class="mb-4 hidden flex-wrap gap-2 rounded-2xl border border-white/10 bg-slate-950/35 p-2.5"
-          aria-label="Player claim summary"
-        ></section>
         <div id="results-grid" class="result-board" aria-live="polite"></div>
       </section>
 
@@ -184,11 +191,34 @@
         <div class="mt-5 space-y-8">
           <section>
             <div class="mb-4 text-center">
-              <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">
-                Reference
-              </p>
-              <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                Noble Layout
+              <h2
+                class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl inline-flex items-center flex-row gap-2"
+              >
+                All Nobles
+                <div
+                  id="noble-view-switcher"
+                  class="hidden grid grid-cols-2 gap-2 rounded-lg bg-white/5 p-1"
+                  hidden
+                >
+                  <button
+                    class="rounded-md px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition hover:bg-white/8"
+                    type="button"
+                    value="picture"
+                    data-noble-view
+                    aria-pressed="true"
+                  >
+                    Picture Tiles
+                  </button>
+                  <button
+                    class="rounded-md px-3 py-2.5 text-center text-xs font-black uppercase tracking-[0.18em] text-slate-300 transition hover:bg-white/8"
+                    type="button"
+                    value="labeled"
+                    data-noble-view
+                    aria-pressed="false"
+                  >
+                    Labeled Tiles
+                  </button>
+                </div>
               </h2>
             </div>
             <section
@@ -200,9 +230,6 @@
 
           <section>
             <div class="mb-4 text-center">
-              <p class="text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">
-                Reference
-              </p>
               <h2 class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
                 All Cities
               </h2>
@@ -236,7 +263,7 @@
         class="w-full rounded-[2rem] border border-white/12 bg-slate-950/60 p-8 text-center shadow-[0_18px_55px_rgba(0,0,0,0.3)] backdrop-blur-sm"
       >
         <p class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.32em] text-amber-300">
-          Splendor Randomizer
+          <a class="transition hover:text-amber-200" href="./">Splendor Randomizer</a>
         </p>
         <h1 class="text-3xl font-black tracking-tight text-white sm:text-4xl">
           Could not load tiles
@@ -246,10 +273,24 @@
     </main>
 
     <script type="module" src="./src/main.js"></script>
-    <script>
+    <script type="module">
+      import { DEV_MODE } from "./src/constants.data.js";
+
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js");
+        window.addEventListener("load", async () => {
+          if (DEV_MODE) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((key) => caches.delete(key)));
+            }
+
+            return;
+          }
+
+          await navigator.serviceWorker.register("./sw.js");
         });
       }
     </script>

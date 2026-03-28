@@ -1,4 +1,5 @@
-import { clamp, shuffle } from "./shared.util.js";
+import { URL_TILE_DELIMITER } from "./constants.data.js";
+import { clamp, shuffle, toTitleCaseWord } from "./shared.util.js";
 
 export function createPools(noblePool, cityPool) {
   return {
@@ -27,7 +28,7 @@ export function normalizePlayers(value) {
   const players = [];
 
   for (const item of source) {
-    const player = String(item).trim().replace(/\s+/g, " ");
+    const player = toTitleCaseWord(String(item).trim().replace(/\s+/g, ""));
     const key = player.toLocaleLowerCase();
 
     if (!player || seen.has(key)) {
@@ -39,6 +40,10 @@ export function normalizePlayers(value) {
   }
 
   return players.slice(0, 8);
+}
+
+export function formatPlayerDraft(value) {
+  return String(value).replace(/[^\s,~.]+/g, (item) => toTitleCaseWord(item));
 }
 
 export function sanitizeClaims(claims, ids, players) {
@@ -62,15 +67,15 @@ export function parseHash(hash, pools) {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   const rawMode = params.get("mode");
   const mode = rawMode === "cities" ? "cities" : "nobles";
-  const maxCount = Math.max(getMaxCount(pools, mode), 1);
-  const rawCount = Number.parseInt(params.get("count") ?? "3", 10);
-  const count = Number.isFinite(rawCount)
-    ? clamp(rawCount, 1, maxCount)
-    : clamp(3, 1, maxCount);
-  const ids = (params.get("ids") ?? "")
-    .split(",")
+  const rawTiles = params.get("tiles") ?? params.get("ids") ?? "";
+  const ids = rawTiles
+    .split(new RegExp(`[${escapeRegExp(URL_TILE_DELIMITER)},]`))
     .map((id) => id.trim())
     .filter(Boolean);
+  const maxCount = Math.max(getMaxCount(pools, mode), 1);
+  const rawCount = Number.parseInt(params.get("count") ?? "3", 10);
+  const fallbackCount = Number.isFinite(rawCount) ? rawCount : 3;
+  const count = clamp(ids.length || fallbackCount, 1, maxCount);
   const players = normalizePlayers(params.get("players") ?? "");
 
   return { mode, count, ids, players };
@@ -122,7 +127,7 @@ export function serializeState(state) {
   const params = new URLSearchParams();
   params.set("mode", state.mode);
   params.set("count", String(state.count));
-  params.set("ids", state.ids.join(","));
+  params.set("tiles", state.ids.join(URL_TILE_DELIMITER));
 
   if (state.players.length > 0) {
     params.set("players", state.players.join("."));
@@ -137,4 +142,8 @@ export function getSelection(pools, state) {
   return state.ids
     .map((id) => itemLookup.get(id))
     .filter(Boolean);
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

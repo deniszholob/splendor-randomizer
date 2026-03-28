@@ -11,3 +11,11 @@
 - Keep browser compatibility in mind for no-build static apps: use plain ES modules, avoid tooling-only assumptions, and keep paths explicit.
 - If app entrypoints or static asset paths change, remember to update service worker cache lists and bump the cache version.
 - Prioritize mobile tablet and desktop modes when writing code
+
+# Styling
+
+- prefer tailwind over raaw css
+- prefer flex over grid
+- prefer gap over margin
+- prefer smaller border radii over larger
+- less box-in-box type styling with too many borders

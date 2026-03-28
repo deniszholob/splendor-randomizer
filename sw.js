@@ -1,4 +1,4 @@
-const CACHE_NAME = "splendor-randomizer-v2";
+const CACHE_NAME = "splendor-randomizer-v3";
 const CORE_ASSETS = [
   "./",
   "./index.html",

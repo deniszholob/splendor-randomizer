@@ -1,8 +1,10 @@
 import {
   COLOR_LABELS,
   COLORS,
+  DEV_MODE,
   GITHUB_LINK,
   PLAYER_ACCENTS,
+  URL_TILE_DELIMITER,
 } from "./constants.data.js";
 import {
   buildImageCandidates,
@@ -13,30 +15,42 @@ import { escapeHtml } from "./shared.util.js";
 
 export function createRenderer(elements) {
   elements.sourceLink.href = GITHUB_LINK;
+  let referenceSignature = "";
 
   return {
-    renderApp({ pools, state, activeClaimTileId }) {
+    renderApp({ nobleReferenceView, pools, state, activeClaimTileId }) {
       document.title = "Splendor Randomizer";
-      syncControls(elements, pools, state);
+      syncControls(elements, pools, state, nobleReferenceView);
       elements.modeDescription.textContent = `Generate a random set of ${state.mode}, share the URL so everyone sees the same tiles, then mark claimed tiles by player as the game moves.`;
-      elements.playerSummary.innerHTML = renderPlayerSummary(state);
-      elements.playerSummary.classList.toggle(
-        "hidden",
-        state.players.length === 0,
-      );
       elements.results.className =
         state.mode === "cities"
           ? "result-board result-board-cities"
           : "result-board";
-      elements.results.innerHTML = renderSelection(state, activeClaimTileId);
+      elements.results.innerHTML = renderSelection(
+        state,
+        activeClaimTileId,
+        nobleReferenceView,
+      );
       wireImageFallback(elements.results);
-    },
+      wireStaticImageFallback(elements.results);
 
-    renderReference(pools) {
-      elements.nobleReference.innerHTML = renderNobleReference(pools);
-      elements.cityReference.innerHTML = renderCityReference(pools.cityPool);
-      wireImageFallback(elements.nobleReference);
-      wireStaticImageFallback(elements.cityReference);
+      const nextReferenceSignature = `${nobleReferenceView}|${state.mode}|${state.ids.join(URL_TILE_DELIMITER)}`;
+
+      if (referenceSignature !== nextReferenceSignature) {
+        referenceSignature = nextReferenceSignature;
+        elements.nobleReference.innerHTML = renderNobleReference(
+          pools,
+          state,
+          nobleReferenceView,
+        );
+        elements.cityReference.innerHTML = renderCityReference(
+          pools.cityPool,
+          state,
+        );
+        wireImageFallback(elements.nobleReference);
+        wireStaticImageFallback(elements.nobleReference);
+        wireStaticImageFallback(elements.cityReference);
+      }
     },
 
     renderError(error) {
@@ -54,7 +68,7 @@ export function createRenderer(elements) {
   };
 }
 
-function syncControls(elements, pools, state) {
+function syncControls(elements, pools, state, nobleReferenceView) {
   const maxCount =
     state.mode === "cities" ? pools.cityPool.length : pools.noblePool.length;
 
@@ -64,45 +78,45 @@ function syncControls(elements, pools, state) {
   elements.countInput.max = String(maxCount);
   elements.countInput.value = String(state.count);
   elements.countHint.textContent = `max ${maxCount}`;
-  elements.playersInput.value = state.players.join(" ");
+  elements.nobleViewSwitcher.hidden = !DEV_MODE;
+  elements.nobleViewSwitcher.classList.toggle("hidden", !DEV_MODE);
+  elements.nobleViewButtons.forEach((button) => {
+    const isActive = button.value === nobleReferenceView;
+    button.setAttribute("aria-pressed", String(isActive));
+    button.classList.toggle("bg-amber-100/14", isActive);
+    button.classList.toggle("text-amber-100", isActive);
+    button.classList.toggle("bg-transparent", !isActive);
+    button.classList.toggle("text-slate-300", !isActive);
+  });
 }
 
-function renderSelection(state, activeClaimTileId) {
+function renderSelection(state, activeClaimTileId, nobleReferenceView) {
   return state.selection
     .map((item) => {
       return item.kind === "cities"
-        ? renderCityCard(item, state, activeClaimTileId, true)
-        : renderNobleCard(item, state, activeClaimTileId, true);
+        ? renderCityCard(item, {
+            activeClaimTileId,
+            interactive: true,
+            players: state.players,
+            claims: state.claims,
+          })
+        : renderNobleCard(item, {
+            activeClaimTileId,
+            interactive: true,
+            players: state.players,
+            claims: state.claims,
+            showImage: nobleReferenceView === "picture",
+            showColorChips: nobleReferenceView === "labeled",
+            showReferenceBadges: nobleReferenceView === "labeled",
+          });
     })
     .join("");
 }
 
-function renderPlayerSummary(state) {
-  const counts = new Map(state.players.map((player) => [player, 0]));
-
-  for (const claimedBy of Object.values(state.claims ?? {})) {
-    counts.set(claimedBy, (counts.get(claimedBy) ?? 0) + 1);
-  }
-
-  return state.players
-    .map((player) => {
-      const accent = getPlayerAccent(player, state.players);
-      const claimedCount = counts.get(player) ?? 0;
-      return `
-        <div
-          class="rounded-full border px-3 py-1.5 text-sm font-bold"
-          style="${accentStyle(accent)}"
-        >
-          ${escapeHtml(`${player} ${claimedCount > 0 ? `(${claimedCount})` : ""}`.trim())}
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function renderNobleReference(pools) {
+function renderNobleReference(pools, state, nobleReferenceView) {
   const cards = [];
   const { nobleById } = pools;
+  const selectedIds = state.mode === "nobles" ? new Set(state.ids) : new Set();
 
   for (let rowIndex = 0; rowIndex < COLORS.length; rowIndex += 1) {
     for (let columnIndex = 0; columnIndex < COLORS.length; columnIndex += 1) {
@@ -110,7 +124,13 @@ function renderNobleReference(pools) {
       const columnColor = COLORS[columnIndex];
 
       if (rowIndex === columnIndex) {
-        cards.push(renderTokenCard(rowColor));
+        cards.push(
+          renderTokenCard(rowColor, {
+            showImage: nobleReferenceView === "picture",
+            showReferenceBadges: nobleReferenceView === "labeled",
+            showColorChips: nobleReferenceView === "labeled",
+          }),
+        );
         continue;
       }
 
@@ -118,7 +138,15 @@ function renderNobleReference(pools) {
         const pairColors = normalizeColors([rowColor, columnColor]);
         const pair = nobleById.get(comboId(pairColors));
         if (pair) {
-          cards.push(renderNobleCard(pair));
+          cards.push(
+            renderNobleCard(pair, {
+              selectedIds,
+              showImage: nobleReferenceView === "picture",
+              showReferenceBadges: nobleReferenceView === "labeled",
+              showColorChips: nobleReferenceView === "labeled",
+              referenceMode: "nobles",
+            }),
+          );
         }
         continue;
       }
@@ -128,7 +156,15 @@ function renderNobleReference(pools) {
       );
       const triplet = nobleById.get(comboId(tripletColors));
       if (triplet) {
-        cards.push(renderNobleCard(triplet));
+        cards.push(
+          renderNobleCard(triplet, {
+            selectedIds,
+            showImage: nobleReferenceView === "picture",
+            showReferenceBadges: nobleReferenceView === "labeled",
+            showColorChips: nobleReferenceView === "labeled",
+            referenceMode: "nobles",
+          }),
+        );
       }
     }
   }
@@ -136,43 +172,57 @@ function renderNobleReference(pools) {
   return cards.join("");
 }
 
-function renderCityReference(cityPool) {
-  return cityPool.map((city) => renderCityCard(city)).join("");
+function renderCityReference(cityPool, state) {
+  const selectedIds = state.mode === "cities" ? new Set(state.ids) : new Set();
+
+  return cityPool
+    .map((city) =>
+      renderCityCard(city, {
+        referenceMode: "cities",
+        selectedIds,
+      }),
+    )
+    .join("");
 }
 
 function renderNobleCard(
   combo,
-  state = null,
-  activeClaimTileId = "",
-  interactive = false,
+  {
+    activeClaimTileId = "",
+    claims = {},
+    interactive = false,
+    players = [],
+    referenceMode = "",
+    selectedIds = new Set(),
+    showColorChips = false,
+    showImage = true,
+    showReferenceBadges = false,
+  } = {},
 ) {
-  // Cards render to strings so one board-level `innerHTML` update can replace
-  // the full grid while events stay delegated at the container level.
   const badgeText = combo.colors.length === 2 ? "Double" : "Triplet";
   const ariaLabel = `Noble for ${combo.colors.map((color) => COLOR_LABELS[color]).join(", ")}`;
-  const claimedBy = state?.claims?.[combo.id] ?? "";
+  const claimedBy = claims?.[combo.id] ?? "";
   const isClaiming = interactive && activeClaimTileId === combo.id;
-  const interactiveAttrs =
-    interactive && state?.players?.length
-      ? ` data-tile-id="${escapeHtml(combo.id)}" role="button" tabindex="0"`
-      : "";
+  const isSelected = selectedIds.has(combo.id);
+  const cardStyle = claimedBy ? claimTintStyle(claimedBy, players) : "";
+  const interactionAttrs = buildInteractionAttrs({
+    interactive,
+    players,
+    referenceMode,
+    tileId: combo.id,
+  });
   const claimPanel = interactive
-    ? renderClaimPanel(combo.id, state, claimedBy, activeClaimTileId)
+    ? renderClaimPanel(combo.id, players, claimedBy, activeClaimTileId)
     : "";
-
-  return `
-    <article
-      class="card-frame noble-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} noble-art-card"
-      aria-label="${escapeHtml(ariaLabel)}"
-      ${interactiveAttrs}
-    >
+  const imageMarkup = showImage
+    ? `
       ${renderFallback(
         combo.colors.map((color) => COLOR_LABELS[color]).join(" / "),
         combo.image.split("/").pop(),
         "Noble image missing",
       )}
       <img
-        class="absolute inset-0 z-10 h-full w-full object-cover"
+        class="tile-image absolute inset-0 z-10 h-full w-full object-cover"
         alt="${escapeHtml(ariaLabel)}"
         loading="lazy"
         data-image-kind="noble"
@@ -180,9 +230,23 @@ function renderNobleCard(
         data-candidate-index="0"
       />
       <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
-      ${renderBadge(badgeText, "right-2 top-2 sm:right-3 sm:top-3")}
-      ${renderClaimBadge(claimedBy, state?.players ?? [])}
-      ${renderColorChips(combo.colors)}
+    `
+    : `
+      <div class="label-card-bg absolute inset-0 z-0"></div>
+      <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
+    `;
+
+  return `
+    <article
+      class="card-frame noble-card noble-art-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} ${isSelected ? "is-selected" : ""}"
+      aria-label="${escapeHtml(ariaLabel)}"
+      style="${cardStyle}"
+      ${interactionAttrs}
+    >
+      ${imageMarkup}
+      ${showReferenceBadges ? renderBadge(badgeText, "right-2 top-2 sm:right-3 sm:top-3") : ""}
+      ${interactive ? renderClaimBadge(claimedBy, players) : ""}
+      ${showColorChips ? renderColorChips(combo.colors) : ""}
       ${claimPanel}
     </article>
   `;
@@ -190,29 +254,38 @@ function renderNobleCard(
 
 function renderCityCard(
   city,
-  state = null,
-  activeClaimTileId = "",
-  interactive = false,
+  {
+    activeClaimTileId = "",
+    claims = {},
+    interactive = false,
+    players = [],
+    referenceMode = "",
+    selectedIds = new Set(),
+  } = {},
 ) {
-  const claimedBy = state?.claims?.[city.id] ?? "";
+  const claimedBy = claims?.[city.id] ?? "";
   const isClaiming = interactive && activeClaimTileId === city.id;
-  const interactiveAttrs =
-    interactive && state?.players?.length
-      ? ` data-tile-id="${escapeHtml(city.id)}" role="button" tabindex="0"`
-      : "";
+  const isSelected = selectedIds.has(city.id);
+  const interactionAttrs = buildInteractionAttrs({
+    interactive,
+    players,
+    referenceMode,
+    tileId: city.id,
+  });
   const claimPanel = interactive
-    ? renderClaimPanel(city.id, state, claimedBy, activeClaimTileId)
+    ? renderClaimPanel(city.id, players, claimedBy, activeClaimTileId)
     : "";
 
   return `
     <article
-      class="card-frame city-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""}"
+      class="card-frame city-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)] ${claimedBy ? "is-claimed" : ""} ${isClaiming ? "is-claiming" : ""} ${isSelected ? "is-selected" : ""}"
       aria-label="${escapeHtml(city.title)}"
-      ${interactiveAttrs}
+      style="${claimedBy ? claimTintStyle(claimedBy, players) : ""}"
+      ${interactionAttrs}
     >
       ${renderFallback(city.title, city.filename, "City image missing")}
       <img
-        class="absolute inset-0 z-10 h-full w-full object-cover"
+        class="tile-image absolute inset-0 z-10 h-full w-full object-cover"
         src="${escapeHtml(city.image)}"
         alt="${escapeHtml(city.title)}"
         loading="lazy"
@@ -220,29 +293,60 @@ function renderCityCard(
       />
       <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
       ${renderBadge(`City ${city.number}`, "left-2 top-2 sm:left-3 sm:top-3")}
-      ${renderClaimBadge(claimedBy, state?.players ?? [])}
+      ${interactive ? renderClaimBadge(claimedBy, players) : ""}
       ${claimPanel}
     </article>
   `;
 }
 
-function renderTokenCard(color) {
+function buildInteractionAttrs({
+  interactive,
+  players,
+  referenceMode,
+  tileId,
+}) {
+  if (referenceMode) {
+    return `data-reference-mode="${escapeHtml(referenceMode)}" data-reference-tile-id="${escapeHtml(tileId)}" role="button" tabindex="0"`;
+  }
+
+  if (interactive && players.length) {
+    return `data-tile-id="${escapeHtml(tileId)}" role="button" tabindex="0"`;
+  }
+
+  return "";
+}
+
+function renderTokenCard(
+  color,
+  { showColorChips = true, showImage = true, showReferenceBadges = true } = {},
+) {
+  const ariaLabel = `${COLOR_LABELS[color]} token`;
+
   return `
     <article
       class="card-frame noble-card noble-art-card relative isolate overflow-hidden rounded-[1.2rem] border border-white/12 bg-slate-900/70 shadow-[0_14px_32px_rgba(0,0,0,0.28)]"
-      aria-label="${escapeHtml(`${COLOR_LABELS[color]} token`)}"
+      aria-label="${escapeHtml(ariaLabel)}"
     >
-      ${renderFallback(COLOR_LABELS[color], `${color}.webp`, "Token image missing")}
-      <img
-        class="absolute inset-0 z-10 h-full w-full object-cover"
-        src="assets/tokens/${escapeHtml(color)}.webp"
-        alt="${escapeHtml(`${COLOR_LABELS[color]} token`)}"
-        loading="lazy"
-        data-image-kind="static"
-      />
-      <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
-      ${renderBadge("Token", "right-2 top-2 sm:right-3 sm:top-3")}
-      ${renderColorChips([color])}
+      ${
+        showImage
+          ? `
+            ${renderFallback(COLOR_LABELS[color], `${color}.webp`, "Token image missing")}
+            <img
+              class="tile-image absolute inset-0 z-10 h-full w-full object-cover"
+              src="assets/tokens/${escapeHtml(color)}.webp"
+              alt="${escapeHtml(ariaLabel)}"
+              loading="lazy"
+              data-image-kind="static"
+            />
+            <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
+          `
+          : `
+            <div class="label-card-bg absolute inset-0 z-0"></div>
+            <div class="card-scrim pointer-events-none absolute inset-0 z-10"></div>
+          `
+      }
+      ${showReferenceBadges ? renderBadge("Token", "right-2 top-2 sm:right-3 sm:top-3") : ""}
+      ${showColorChips ? renderColorChips([color]) : ""}
     </article>
   `;
 }
@@ -262,7 +366,7 @@ function renderClaimBadge(claimedBy, players) {
 
   return `
     <span
-      class="claim-badge absolute left-2 bottom-2 z-30 max-w-[70%] rounded-full border px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.16em] shadow-lg sm:left-3 sm:bottom-3 sm:text-[0.68rem]"
+      class="claim-badge absolute bottom-1/2 left-1/2 z-30 w-max max-w-[84%] -translate-x-1/2 translate-y-1/2 rounded-md border px-3.5 py-2 text-[0.8rem] font-extrabold tracking-[0.04em] shadow-lg sm:text-[0.86rem]"
       style="${accentStyle(getPlayerAccent(claimedBy, players))}"
     >
       ${escapeHtml(claimedBy)}
@@ -272,11 +376,11 @@ function renderClaimBadge(claimedBy, players) {
 
 function renderColorChips(colors) {
   return `
-    <div class="color-chip-stack absolute bottom-2 right-2 z-20 hidden max-w-[42%] flex-col items-end gap-1.5 sm:bottom-3 sm:right-3 md:flex">
+    <div class="color-chip-stack absolute bottom-2 right-2 z-20 hidden max-w-[68%] flex-col items-end gap-1.5 sm:bottom-3 sm:right-3 md:flex">
       ${normalizeColors(colors)
         .map(
           (color) => `
-            <span class="color-chip color-chip-${escapeHtml(color)} rounded-full border border-white/15 px-2 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.12em] text-white shadow-md sm:text-[0.68rem]">
+            <span class="color-chip color-chip-${escapeHtml(color)} rounded-lg border border-white/15 px-2 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.12em] text-white shadow-md sm:text-[0.68rem]">
               ${escapeHtml(COLOR_LABELS[color])}
             </span>
           `,
@@ -286,41 +390,26 @@ function renderColorChips(colors) {
   `;
 }
 
-function renderClaimPanel(tileId, state, claimedBy, activeClaimTileId) {
-  if (!state?.players?.length || activeClaimTileId !== tileId) {
+function renderClaimPanel(tileId, players, claimedBy, activeClaimTileId) {
+  if (!players.length || activeClaimTileId !== tileId) {
     return '<div class="claim-panel hidden"></div>';
   }
 
-  // Keep the claim picker compact while scaling up to the max player count.
-  const columnCount = Math.min(
-    3,
-    Math.max(2, Math.ceil(Math.sqrt(state.players.length + 1))),
-  );
-
   return `
     <div class="claim-panel absolute inset-0 z-40 p-2 sm:p-3">
-      <div class="claim-overlay absolute inset-0 rounded-[1.2rem] border border-white/18 bg-slate-950/88 backdrop-blur-sm"></div>
+      <div class="claim-overlay absolute inset-0 rounded-[1.2rem] border border-white/10 backdrop-blur-xs"></div>
       <div
-        class="claim-picker relative z-10 grid h-full w-full gap-2"
-        style="grid-template-columns: repeat(${columnCount}, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr);"
+        class="claim-picker relative z-10 grid h-full w-full grid-cols-2 gap-2"
+        style="grid-auto-rows: minmax(0, 1fr);"
       >
-        <button
-          type="button"
-          class="rounded-full border border-white/18 px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.1em] shadow-[0_8px_24px_rgba(0,0,0,0.28)] backdrop-blur-[10px] ${claimedBy ? "bg-slate-950/88 text-white" : "bg-amber-300 text-slate-900"}"
-          data-claim-tile="${escapeHtml(tileId)}"
-          data-claim-player=""
-          aria-pressed="${claimedBy ? "false" : "true"}"
-        >
-          Open
-        </button>
-        ${state.players
+        ${players
           .map((player) => {
             const isActive = claimedBy === player;
             return `
               <button
                 type="button"
-                class="rounded-full border px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.1em] shadow-[0_8px_24px_rgba(0,0,0,0.28)]"
-                style="${accentStyle(getPlayerAccent(player, state.players), isActive)}"
+                class="name-badge rounded-md border px-3 py-2 text-xs font-black tracking-[0.1em] shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+                style="${accentStyle(getPlayerAccent(player, players), isActive)}"
                 data-claim-tile="${escapeHtml(tileId)}"
                 data-claim-player="${escapeHtml(player)}"
                 aria-pressed="${isActive ? "true" : "false"}"
@@ -330,6 +419,15 @@ function renderClaimPanel(tileId, state, claimedBy, activeClaimTileId) {
             `;
           })
           .join("")}
+        <button
+          type="button"
+          class="claim-open-button col-span-2 rounded-md border border-white/20 bg-white/88 px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-950 shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+          data-claim-tile="${escapeHtml(tileId)}"
+          data-claim-player=""
+          aria-pressed="${claimedBy ? "true" : "false"}"
+        >
+          ${escapeHtml("Clear")}
+        </button>
       </div>
     </div>
   `;
@@ -361,7 +459,17 @@ function accentStyle(accent, active = true) {
     return `background:${accent.fill};border-color:${accent.strong};color:${accent.text};`;
   }
 
-  return `background:${accent.soft};border-color:${accent.strong};color:white;`;
+  return `background:${accent.soft};border-color:${accent.strong};color:${accent.text};`;
+}
+
+function claimTintStyle(claimedBy, players) {
+  const accent = getPlayerAccent(claimedBy, players);
+
+  if (!accent) {
+    return "";
+  }
+
+  return `--claim-fill:${accent.soft};`;
 }
 
 function wireImageFallback(root) {
@@ -388,8 +496,6 @@ function onNobleImageError(event) {
 }
 
 function loadNobleCandidate(image) {
-  // Noble art asset names vary, so we try the ordered candidate list until one
-  // loads or fall back to the placeholder card.
   const candidates = JSON.parse(image.dataset.candidates ?? "[]");
   const candidateIndex = Number.parseInt(
     image.dataset.candidateIndex ?? "0",
