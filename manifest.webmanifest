@@ -1,0 +1,43 @@
+{
+  "name": "Splendor Randomizer",
+  "short_name": "Splendor RNG",
+  "description": "Generate random Splendor nobles or cities and share the exact same selection with a link.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "./assets/tokens/yellow.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "./assets/tokens/yellow.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./assets/screenshots/splendor-randomizer-fullpage.png",
+      "sizes": "1179x2532",
+      "type": "image/png",
+      "label": "Splendor Randomizer full page"
+    },
+    {
+      "src": "./assets/screenshots/splendor-randomizer-nobels.png",
+      "sizes": "1284x2778",
+      "type": "image/png",
+      "label": "Random nobles selection"
+    },
+    {
+      "src": "./assets/screenshots/splendor-randomizer-cities.png",
+      "sizes": "1284x2778",
+      "type": "image/png",
+      "label": "Random cities selection"
+    }
+  ]
+}

@@ -14,6 +14,10 @@
       content="Generate random Splendor nobles or cities, then share the URL so everyone sees the same tiles."
     />
     <meta name="theme-color" content="#020617" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Splendor Randomizer" />
     <meta property="og:title" content="Splendor Randomizer" />
     <meta
       property="og:description"
@@ -26,6 +30,8 @@
       type="image/webp"
       href="./assets/tokens/yellow.webp"
     />
+    <link rel="apple-touch-icon" href="./assets/tokens/yellow.webp" />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
     <title>Splendor Randomizer</title>
 
@@ -107,5 +113,12 @@
   <body>
     <div id="app"></div>
     <script type="module" src="app.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js");
+        });
+      }
+    </script>
   </body>
 </html>

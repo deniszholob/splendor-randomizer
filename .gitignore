@@ -29,6 +29,7 @@ testem.log
 debug-storybook.log
 storybook-static
 /typings
+.codex
 
 # System Files
 .DS_Store
