@@ -1,4 +1,4 @@
-const CACHE_NAME = "splendor-randomizer-v3";
+const CACHE_NAME = "splendor-randomizer-v4";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -49,6 +49,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+  const isAppShellRequest =
+    isSameOrigin &&
+    (event.request.mode === "navigate" ||
+      requestUrl.pathname.endsWith("/") ||
+      requestUrl.pathname.endsWith("/index.html") ||
+      requestUrl.pathname.endsWith(".html") ||
+      requestUrl.pathname.endsWith(".js") ||
+      requestUrl.pathname.endsWith(".css") ||
+      requestUrl.pathname.endsWith(".webmanifest"));
+
+  if (isAppShellRequest) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -69,3 +85,20 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
+
+function networkFirst(request) {
+  return fetch(request)
+    .then((networkResponse) => {
+      if (networkResponse && networkResponse.status === 200) {
+        const responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, responseClone);
+        });
+      }
+
+      return networkResponse;
+    })
+    .catch(() => {
+      return caches.match(request);
+    });
+}
