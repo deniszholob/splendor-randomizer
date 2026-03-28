@@ -126,6 +126,13 @@ body {
   /* outline-offset: 2px; */
 }
 
+@media (min-width: 768px) {
+  .noble-board .card-frame.is-selected,
+  .city-board .card-frame.is-selected {
+    outline-width: 6px;
+  }
+}
+
 .card-scrim {
   background: var(--overlay-scrim);
 }
